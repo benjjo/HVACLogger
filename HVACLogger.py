@@ -3,6 +3,9 @@ import os
 import matplotlib.pyplot as plt
 import shutil
 
+"""
+Takes a bunch of text files with an xls extension and tab separated data and turns them into usable csv files.
+"""
 all_data = pd.DataFrame()
 
 path = os.getcwd()
