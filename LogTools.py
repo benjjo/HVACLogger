@@ -4,10 +4,11 @@ import matplotlib.pyplot as plt
 import shutil
 
 
-class Logulator:
+class LogTools:
     """
     Takes a bunch of text files with an xls extension and tab separated data and turns them into usable csv files.
     """
+
     def __init__(self):
         self.all_data = pd.DataFrame()
         self.path = os.getcwd()
@@ -84,9 +85,10 @@ class Logulator:
         return temperatureData
 
     def temperatureData(self):
-        return self.temperaturDataHelper[(self.temperaturDataHelper['Time date'].dt.year > 2006)].copy().set_index('Time date')
+        return self.temperaturDataHelper[(self.temperaturDataHelper['Time date'].dt.year > 2006)].copy().set_index(
+            'Time date')
 
-    def showPlot(self, df):
+    def showPlot(self, df, savePlot):
         df.plot(kind='line', legend=None)
         plt.xticks(color='C0', rotation='vertical')
         plt.xlabel('Time date', color='C0', size=10)
@@ -97,9 +99,13 @@ class Logulator:
         plt.grid('on', linestyle='--')
         lgd = plt.legend(title='Channel', bbox_to_anchor=(1.05, 1), loc='upper left')
 
-        plt.savefig('myfig100.png', dpi=300, facecolor='w', edgecolor='w',
-                    orientation='landscape', format=None, bbox_extra_artists=(lgd,), bbox_inches='tight',
-                    transparent=False, pad_inches=0.1)
+        if savePlot:
+            plt.savefig('myfig100.png', dpi=300, facecolor='w', edgecolor='w',
+                        orientation='landscape', format=None, bbox_extra_artists=(lgd,), bbox_inches='tight',
+                        transparent=False, pad_inches=0.1)
 
         plt.show()
 
+
+class Logulator(LogTools):
+    pass
