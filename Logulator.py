@@ -57,7 +57,6 @@ class Logulator:
             counter += 1
         tempLogs.to_csv('loggerData.csv')
 
-
     def getDataLoggerDF(self):
         if 'loggerData.csv' not in os.listdir(self.path):
             self.writeTempLoggerFiles()
@@ -93,6 +92,7 @@ class Logulator:
         else:
             temperatureData = pd.read_csv("temperatureData.csv")
 
+        temperatureData = self.dateSortAndReIndex(temperatureData)
         temperatureData = temperatureData.set_index('Time date')
         return temperatureData
 
@@ -107,6 +107,7 @@ class Logulator:
         else:
             damperData = pd.read_csv("damperData.csv")
 
+        damperData = self.dateSortAndReIndex(damperData)
         damperData = damperData.set_index('Time date')
         return damperData
 
@@ -118,9 +119,15 @@ class Logulator:
         dataLogger['Temperature °C'] = df['Celsius(°C)']
         dataLogger.to_csv("dataLogger.csv", index=False)
         dataLogger = pd.read_csv("dataLogger.csv")
-
+        dataLogger = self.dateSortAndReIndex(dataLogger)
         dataLogger = dataLogger.set_index('Time date')
         return dataLogger
+
+    def dateSortAndReIndex(self, df):
+        df['Time date'] = pd.to_datetime(df['Time date'])
+        df = df.sort_values(by='Time date')
+        df = df.reset_index(drop=True)  # Reset the index to line up with the sorted data.
+        return df
 
 
 class TempLogger(Logulator):
@@ -165,7 +172,7 @@ class DampLogger(Logulator):
         plt.show()
 
 
-class dataLoggerTemperatures(Logulator):
+class DataLoggerTemperatures(Logulator):
     def plotDataLoggerTemps(self):
 
         dfTemp = Logulator.getDataLogger(self).copy()
@@ -174,12 +181,12 @@ class dataLoggerTemperatures(Logulator):
         plt.xlabel('Time date', color='C0', size=10)
         plt.yticks(color='C0')
         plt.tight_layout(pad=2)
-        plt.title('HVAC Temperatures', color='C0')
+        plt.title('Data Logger Temperatures', color='C0')
         plt.ylabel('Temperature', color='C0', size=10)
         plt.grid('on', linestyle='--')
         lgd = plt.legend(title='Channel', bbox_to_anchor=(1.05, 1))
 
-        plt.savefig('myfig100.png', dpi=300, facecolor='w', edgecolor='w',
+        plt.savefig('myfig001.png', dpi=300, facecolor='w', edgecolor='w',
                     orientation='landscape', format=None, bbox_extra_artists=(lgd,), bbox_inches='tight',
                     transparent=False, pad_inches=0.1)
         plt.show()
@@ -188,7 +195,7 @@ class dataLoggerTemperatures(Logulator):
 def main():
     temp = TempLogger()
     damp = DampLogger()
-    dataLog = dataLoggerTemperatures()
+    dataLog = DataLoggerTemperatures()
 
     # temp.plotTemperatures()
     # damp.plotDamperPositions()
