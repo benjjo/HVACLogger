@@ -19,7 +19,7 @@ class logulator:
 		if 'all_data.csv' not in os.listdir(self.path):
 			self.setupCSVfiles()
 			self.writeTempCSVfiles()
-			self.CSVtoDataframe()
+			self.csvToDataframe()
 			self.writeAllDataCSV()
 			self.all_data.to_csv("all_data.csv", index=False)
 
@@ -54,7 +54,7 @@ class logulator:
 		self.all_data.to_csv("all_data.csv", index=False)
 		shutil.rmtree(self.tempDir)	
 
-	def CSVtoDataframe(self):
+	def csvToDataframe(self):
 		tempFiles = os.listdir(self.tempDir)
 		self.all_data = pd.DataFrame(None)
 		files_csv = [f for f in tempFiles if f[-3:] == 'csv']
