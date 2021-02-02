@@ -43,7 +43,7 @@ class Logulator:
                                             'BERTH_9_FEEDBACK,BERTH_10_FEEDBACK,NothinToSeeHere,'))
                 counter += 1
 
-    def writeTempLoggerFiles(self):
+    def createDataLoggerCSV(self):
         tempLogs = pd.DataFrame()
         self.path = os.getcwd()
         files = os.listdir(self.path)
@@ -57,10 +57,21 @@ class Logulator:
             counter += 1
         tempLogs.to_csv('loggerData.csv')
 
-    def getDataLoggerDF(self):
+    def readDataLoggerCSV(self):
         if 'loggerData.csv' not in os.listdir(self.path):
-            self.writeTempLoggerFiles()
+            self.createDataLoggerCSV()
         return pd.read_csv('loggerData.csv')
+
+    def makeDataLoggerDataFrame(self):
+        df = self.readDataLoggerCSV()
+        dataLogger = pd.DataFrame()
+        dataLogger['Time date'] = df['Time']
+        dataLogger['Temperature °C'] = df['Celsius(°C)']
+        dataLogger.to_csv("dataLogger.csv", index=False)
+        dataLogger = pd.read_csv("dataLogger.csv")
+        dataLogger = self.dateSortAndReIndex(dataLogger)
+        dataLogger = dataLogger.set_index('Time date')
+        return dataLogger
 
     def writeAllDataCSV(self):
         self.all_data.to_csv("all_data.csv", index=False)
@@ -110,18 +121,6 @@ class Logulator:
         damperData = self.dateSortAndReIndex(damperData)
         damperData = damperData.set_index('Time date')
         return damperData
-
-    def getDataLogger(self):
-        df = self.getDataLoggerDF()
-        df.head()
-        dataLogger = pd.DataFrame()
-        dataLogger['Time date'] = df['Time']
-        dataLogger['Temperature °C'] = df['Celsius(°C)']
-        dataLogger.to_csv("dataLogger.csv", index=False)
-        dataLogger = pd.read_csv("dataLogger.csv")
-        dataLogger = self.dateSortAndReIndex(dataLogger)
-        dataLogger = dataLogger.set_index('Time date')
-        return dataLogger
 
     def dateSortAndReIndex(self, df):
         df['Time date'] = pd.to_datetime(df['Time date'])
@@ -174,8 +173,7 @@ class DampLogger(Logulator):
 
 class DataLoggerTemperatures(Logulator):
     def plotDataLoggerTemps(self):
-
-        dfTemp = Logulator.getDataLogger(self).copy()
+        dfTemp = Logulator.makeDataLoggerDataFrame(self).copy()
         dfTemp.plot(kind='line', legend=None)
         plt.xticks(color='C0', rotation='vertical')
         plt.xlabel('Time date', color='C0', size=10)
@@ -191,15 +189,79 @@ class DataLoggerTemperatures(Logulator):
                     transparent=False, pad_inches=0.1)
         plt.show()
 
+    def plotDataLoggerOverHVAC(self, sensor):
+        sensors = {1: 'Dining Floor Return', 2: 'External Grill Supply', 3: 'Vestibule E1',
+                   4: 'Vestibule E2', 5: 'Guards Rest Room', 6: 'Guards Control Room'}
+        sensorsCAF = {1: '71B01', 2: '71B02', 3: '71B03', 4: '71B04', 5: '71B05', 6: '71B06'}
+        sensorToTest = sensors[int(sensor)]
+
+        loggerData = Logulator.readDataLoggerCSV(self)
+        loggerData = loggerData.set_index('Time date')
+        loggerData = loggerData.dropna(how='any')
+
+        df = pd.read_csv("temperatureData.csv")
+        # temperatureData = df.set_index('Time date')
+        temperatureData = df[
+            (df['Time date'] >= loggerData.index[0]) & (df['Time date'] <= loggerData.index[-1])].copy().set_index(
+            'Time date')
+        loggerData = loggerData.iloc[10:-5]  # Drop rows
+        dl = loggerData['Temperature °C']
+        y1 = temperatureData[sensorToTest]
+        x = temperatureData.index
+        fig, ax1 = plt.subplots()
+        ax2 = ax1.twiny()  # instantiate a second axes that shares the same x-axis
+        ax1.set_xlabel('Date Time', color='C0')
+        ax1.set_ylabel('Temperatures', color='C0')
+        ax1.tick_params(axis='x', labelcolor='C0', labelrotation=90)
+        ax1.tick_params(axis='y', labelcolor='C0')
+        ax2.tick_params(axis='x', labelcolor='C0')
+        ax2.tick_params(axis='y', labelcolor='C0')
+
+        curveDL = ax2.plot(dl, label='Data Logger', color='tab:green')
+        label = sensors[int(sensor)] + ' ' + sensorsCAF[int(sensor)]
+        curve1 = ax1.plot(x, y1, label=label, color='tab:blue')
+
+        plt.tight_layout(pad=2)
+
+        plt.title(label, color='C0')
+        lgd = plt.legend(title='Legend', bbox_to_anchor=(1.1, 1), loc='upper left')
+        plt.grid('on', linestyle='--')
+
+        ax2.set_xticks([])  # Hide the xticks on the top axis.
+        ax1.set_xticks(range(0, len(x), 20))
+
+        plt.grid('on', linestyle='--')
+
+        plt.savefig('myfig100.png', dpi=300, facecolor='w', edgecolor='w',
+                    orientation='landscape', format=None, bbox_extra_artists=(lgd,), bbox_inches='tight',
+                    transparent=False, pad_inches=0.1)
+
+        plt.show()
+
 
 def main():
-    temp = TempLogger()
-    damp = DampLogger()
+    print("""
+    1. Plot HVAC temperatures
+    2. Plot Damper data
+    3. Plot DataLogger file
+    4. Plot DataLogger file on top of HVAC sensor
+        1. 71B01    Return floor sensor
+        2. 71B02    External Grill supply
+        3. 71B03    E1 Vestibule
+        4. 71B04    E2 Vestibule
+        5. 71B05    Guard's rest room
+        6. 71B06    Guard's control room
+    """)
+    input("Enter choice: ")
+
+    # temp = TempLogger()
+    # damp = DampLogger()
     dataLog = DataLoggerTemperatures()
 
     # temp.plotTemperatures()
     # damp.plotDamperPositions()
-    dataLog.plotDataLoggerTemps()
+    # dataLog.plotDataLoggerTemps()
+    dataLog.plotDataLoggerOverHVAC(input("Sensor: "))
 
 
 if __name__ == "__main__":
