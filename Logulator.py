@@ -57,22 +57,6 @@ class Logulator:
             counter += 1
         tempLogs.to_csv('loggerData.csv')
 
-    def readDataLoggerCSV(self):
-        if 'loggerData.csv' not in os.listdir(self.path):
-            self.createDataLoggerCSV()
-        return pd.read_csv('loggerData.csv')
-
-    def makeDataLoggerDataFrame(self):
-        df = self.readDataLoggerCSV()
-        dataLogger = pd.DataFrame()
-        dataLogger['Time date'] = df['Time']
-        dataLogger['Temperature °C'] = df['Celsius(°C)']
-        dataLogger.to_csv("dataLogger.csv", index=False)
-        dataLogger = pd.read_csv("dataLogger.csv")
-        dataLogger = self.dateSortAndReIndex(dataLogger)
-        dataLogger = dataLogger.set_index('Time date')
-        return dataLogger
-
     def writeAllDataCSV(self):
         self.all_data.to_csv("all_data.csv", index=False)
         shutil.rmtree(self.tempDir)
@@ -87,9 +71,16 @@ class Logulator:
             self.all_data = self.all_data.append(data)
 
     def getTempData(self):
+        """
+        Returns a DataFrame using the temperature sensor data from the HVAC unit.
+        If there is no temperatureData.csv file available, it will make one with the
+        HVAC csv logs.
+        :return: temperatureData of type DataFrame
+        """
+        temperatureData = pd.DataFrame()
+
         if 'temperatureData.csv' not in os.listdir(self.path):
             df = self.getAllData()
-            temperatureData = pd.DataFrame()
             temperatureData['Time date'] = df['Time date']
             temperatureData['External Grill Supply'] = df['TEMPERATURE_SUPPLY_1']
             temperatureData['SAT1'] = df['TEMPERATURE_SUPPLY_2']
@@ -100,12 +91,44 @@ class Logulator:
             temperatureData['Guards Rest Room'] = df['TEMP. GUARD_GALLEY_WC']
             temperatureData['Guards Control Room'] = df['TEMP. BERTH_1']
             temperatureData.to_csv("temperatureData.csv", index=False)
-        else:
-            temperatureData = pd.read_csv("temperatureData.csv")
 
-        temperatureData = self.dateSortAndReIndex(temperatureData)
-        temperatureData = temperatureData.set_index('Time date')
+        temperatureData = pd.read_csv("temperatureData.csv")
+        temperatureData = self.sortByDateAndReIndex(temperatureData)
         return temperatureData
+
+    def getLoggerData(self):
+        """
+        Returns a DataFrame using the Data Logger data.
+        If there is no loggerData.csv file available, it will make one with the csv logs.
+        :return: loggerDF of type DataFrame
+        """
+        loggerDF = pd.DataFrame()
+        if 'loggerData.csv' not in os.listdir(self.path):
+            tempLogs = pd.DataFrame()
+            path = os.getcwd()
+            files = os.listdir(path)
+            tempDir = './.tempDL/'
+            os.makedirs(tempDir, exist_ok=True)
+            files_xlsx = [f for f in files if f[-4:] == 'xlsx']
+            counter = 0
+            for file in files_xlsx:
+                shutil.copy(file, tempDir + str(counter) + '_New_File.xlsx')
+                data = pd.read_excel(tempDir + str(counter) + '_New_File.xlsx', engine='openpyxl')
+                tempLogs = tempLogs.append(data)
+                counter += 1
+            loggerDF['Time date'] = tempLogs['Time']
+            loggerDF['Logger Temp. °C'] = tempLogs['Celsius(°C)']
+            loggerDF['Time date'] = pd.to_datetime(loggerDF['Time date'])
+            loggerDF = self.sortByDateAndReIndex(loggerDF)
+            loggerDF = loggerDF.dropna(how='any')  # Remove NaN data
+            loggerDF = loggerDF.drop(loggerDF.columns[[0]], axis=1)  # Remove superfluous column
+            loggerDF.to_csv('loggerData.csv')
+            shutil.rmtree(tempDir)
+
+        loggerDF = pd.read_csv('./loggerData.csv')
+        loggerDF = loggerDF.set_index('Time date')
+        loggerDF = loggerDF.dropna(how='any')
+        return loggerDF
 
     def getDamperData(self):
         if './damperData.csv' not in os.listdir(self.path):
@@ -118,21 +141,40 @@ class Logulator:
         else:
             damperData = pd.read_csv("damperData.csv")
 
-        damperData = self.dateSortAndReIndex(damperData)
+        damperData = self.sortByDateAndReIndex(damperData)
         damperData = damperData.set_index('Time date')
         return damperData
 
-    def dateSortAndReIndex(self, df):
+    def sortByDateAndReIndex(self, df):
         df['Time date'] = pd.to_datetime(df['Time date'])
         df = df.sort_values(by='Time date')
         df = df.reset_index(drop=True)  # Reset the index to line up with the sorted data.
         return df
 
+    def makeTempComparisonDF(self):
+        """
+        Makes an empty DataFrame with a index using date time incrementing by seconds.
+        The date range of the index is set by the info from the data logger as this data
+        is more finite than the data from the HVAC unit.
+        :return: tempComparison of type DataFrame
+        """
+        df = self.getTempData()  # Makes a DF using the HVAC sensor data
+        loggerData = self.getLoggerData()  # Makes a DF using the Data Logger data
+        start_date = loggerData.index[0]
+        end_date = loggerData.index[-1]
+        index = pd.date_range(start_date, end=end_date, freq='S')
+        columns = ['Empty']
+        tempComparison = pd.DataFrame(index=index, columns=columns)
+        temperatureData = df[(df['Time date'] >= loggerData.index[0]) & (df['Time date'] <= loggerData.index[-1])].copy().set_index('Time date')
+        tempComparison = loggerData.combine_first(tempComparison)
+        tempComparison = temperatureData.combine_first(tempComparison)
+        del tempComparison['Empty']
+        return tempComparison
+
 
 class TempLogger(Logulator):
     def plotTemperatures(self):
         temperatureData = Logulator.getTempData(self)
-
         dfTemp = temperatureData.copy()
         dfTemp.plot(kind='line', legend=None)
         plt.xticks(color='C0', rotation='vertical')
@@ -173,7 +215,7 @@ class DampLogger(Logulator):
 
 class DataLoggerTemperatures(Logulator):
     def plotDataLoggerTemps(self):
-        dfTemp = Logulator.makeDataLoggerDataFrame(self).copy()
+        dfTemp = Logulator.getLoggerData(self).copy()
         dfTemp.plot(kind='line', legend=None)
         plt.xticks(color='C0', rotation='vertical')
         plt.xlabel('Time date', color='C0', size=10)
@@ -190,53 +232,34 @@ class DataLoggerTemperatures(Logulator):
         plt.show()
 
     def plotDataLoggerOverHVAC(self, sensor):
+        sensor = int(sensor)
         sensors = {1: 'Dining Floor Return', 2: 'External Grill Supply', 3: 'Vestibule E1',
                    4: 'Vestibule E2', 5: 'Guards Rest Room', 6: 'Guards Control Room'}
         sensorsCAF = {1: '71B01', 2: '71B02', 3: '71B03', 4: '71B04', 5: '71B05', 6: '71B06'}
-        sensorToTest = sensors[int(sensor)]
+        sensorToTest = sensors[sensor]
+        title = sensorToTest + ' ' + sensorsCAF[sensor]
 
-        loggerData = Logulator.readDataLoggerCSV(self)
-        loggerData = loggerData.set_index('Time date')
-        loggerData = loggerData.dropna(how='any')
+        dfTemps = pd.DataFrame()
+        tempComparison = Logulator.makeTempComparisonDF(self)
 
-        df = pd.read_csv("temperatureData.csv")
-        # temperatureData = df.set_index('Time date')
-        temperatureData = df[
-            (df['Time date'] >= loggerData.index[0]) & (df['Time date'] <= loggerData.index[-1])].copy().set_index(
-            'Time date')
-        loggerData = loggerData.iloc[10:-5]  # Drop rows
-        dl = loggerData['Temperature °C']
-        y1 = temperatureData[sensorToTest]
-        x = temperatureData.index
-        fig, ax1 = plt.subplots()
-        ax2 = ax1.twiny()  # instantiate a second axes that shares the same x-axis
-        ax1.set_xlabel('Date Time', color='C0')
-        ax1.set_ylabel('Temperatures', color='C0')
-        ax1.tick_params(axis='x', labelcolor='C0', labelrotation=90)
-        ax1.tick_params(axis='y', labelcolor='C0')
-        ax2.tick_params(axis='x', labelcolor='C0')
-        ax2.tick_params(axis='y', labelcolor='C0')
-
-        curveDL = ax2.plot(dl, label='Data Logger', color='tab:green')
-        label = sensors[int(sensor)] + ' ' + sensorsCAF[int(sensor)]
-        curve1 = ax1.plot(x, y1, label=label, color='tab:blue')
-
+        # ffill will fill in the NaN gaps with previous data
+        dfTemps['Logger Temps. °C'] = tempComparison['Logger Temp. °C'].ffill()
+        dfTemps['HVAC Temps. °C'] = tempComparison[sensorToTest].ffill()
+        dfTemps.plot(kind='line', legend=None)
+        plt.xticks(color='C0', rotation='vertical')
+        plt.xlabel('Time date', color='C0', size=10)
+        plt.yticks(color='C0')
         plt.tight_layout(pad=2)
-
-        plt.title(label, color='C0')
-        lgd = plt.legend(title='Legend', bbox_to_anchor=(1.1, 1), loc='upper left')
+        plt.title(title, color='C0')
+        plt.ylabel('Temperature', color='C0', size=10)
         plt.grid('on', linestyle='--')
-
-        ax2.set_xticks([])  # Hide the xticks on the top axis.
-        ax1.set_xticks(range(0, len(x), 20))
-
-        plt.grid('on', linestyle='--')
+        lgd = plt.legend(title='Input Sensor', bbox_to_anchor=(1.05, 1))
 
         plt.savefig('myfig100.png', dpi=300, facecolor='w', edgecolor='w',
                     orientation='landscape', format=None, bbox_extra_artists=(lgd,), bbox_inches='tight',
                     transparent=False, pad_inches=0.1)
-
         plt.show()
+
 
 
 def main():
