@@ -255,7 +255,8 @@ class DataLoggerTemperatures(Logulator):
         plt.grid('on', linestyle='--')
         lgd = plt.legend(title='Input Sensor', bbox_to_anchor=(1.05, 1))
 
-        plt.savefig('myfig100.png', dpi=300, facecolor='w', edgecolor='w',
+        imageName = (title + ' ' + str(dfTemps.index[0]) + '.png').replace(' ', '_').replace(':', '')
+        plt.savefig(imageName, dpi=300, facecolor='w', edgecolor='w',
                     orientation='landscape', format=None, bbox_extra_artists=(lgd,), bbox_inches='tight',
                     transparent=False, pad_inches=0.1)
         plt.show()
@@ -263,28 +264,37 @@ class DataLoggerTemperatures(Logulator):
 
 
 def main():
+    choice = 0
+    temp = TempLogger()
+    damp = DampLogger()
+    dataLog = DataLoggerTemperatures()
+
     print("""
+Choose operation:
     1. Plot HVAC temperatures
     2. Plot Damper data
     3. Plot DataLogger file
     4. Plot DataLogger file on top of HVAC sensor
-        1. 71B01    Return floor sensor
-        2. 71B02    External Grill supply
-        3. 71B03    E1 Vestibule
-        4. 71B04    E2 Vestibule
-        5. 71B05    Guard's rest room
-        6. 71B06    Guard's control room
     """)
-    input("Enter choice: ")
-
-    # temp = TempLogger()
-    # damp = DampLogger()
-    dataLog = DataLoggerTemperatures()
-
-    # temp.plotTemperatures()
-    # damp.plotDamperPositions()
-    # dataLog.plotDataLoggerTemps()
-    dataLog.plotDataLoggerOverHVAC(input("Sensor: "))
+    choice = int(input("Enter choice: "))
+    os.system('cls')
+    if choice == 1:
+        temp.plotTemperatures()
+    elif choice == 2:
+        damp.plotDamperPositions()
+    elif choice == 3:
+        dataLog.plotDataLoggerTemps()
+    elif choice == 4:
+        print("""
+Choose sensor to map:
+    1. 71B01    Return floor sensor
+    2. 71B02    External Grill supply
+    3. 71B03    E1 Vestibule
+    4. 71B04    E2 Vestibule
+    5. 71B05    Guard's rest room
+    6. 71B06    Guard's control room
+        """)
+        dataLog.plotDataLoggerOverHVAC(input("Sensor: "))
 
 
 if __name__ == "__main__":
