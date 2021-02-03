@@ -120,14 +120,13 @@ class Logulator:
             loggerDF['Logger Temp. °C'] = tempLogs['Celsius(°C)']
             loggerDF['Time date'] = pd.to_datetime(loggerDF['Time date'])
             loggerDF = self.sortByDateAndReIndex(loggerDF)
-            loggerDF = loggerDF.dropna(how='any')  # Remove NaN data
-            loggerDF = loggerDF.drop(loggerDF.columns[[0]], axis=1)  # Remove superfluous column
             loggerDF.to_csv('loggerData.csv')
             shutil.rmtree(tempDir)
 
         loggerDF = pd.read_csv('./loggerData.csv')
         loggerDF = loggerDF.set_index('Time date')
         loggerDF = loggerDF.dropna(how='any')
+        loggerDF = loggerDF.drop(loggerDF.columns[[0]], axis=1)  # Remove superfluous column
         return loggerDF
 
     def getDamperData(self):
