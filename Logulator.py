@@ -296,6 +296,8 @@ def main():
         6. 71B06    Guard's control room
         """)
         dataLog.plotDataLoggerOverHVAC(input("Sensor: "))
+    else:
+        print("Your choice was invalid.")
 
 
 if __name__ == "__main__":
