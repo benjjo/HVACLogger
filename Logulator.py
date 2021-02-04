@@ -9,8 +9,12 @@ class Logulator:
         self.all_data = pd.DataFrame()
         self.path = './'
         self.tempDir = self.path + '.temp/'
+        self.version = 'Logulator V1.0'
 
-    def getAllData(self):
+    def getVersion(self):
+        return self.version
+
+    def makeAllDataDF(self):
         if 'all_data.csv' not in os.listdir(self.path):
             self.setupCSVFiles('xls')
             self.writeTempCSVFiles()
@@ -80,7 +84,7 @@ class Logulator:
         temperatureData = pd.DataFrame()
 
         if 'temperatureData.csv' not in os.listdir(self.path):
-            df = self.getAllData()
+            df = self.makeAllDataDF()
             temperatureData['Time date'] = df['Time date']
             temperatureData['External Grill Supply'] = df['TEMPERATURE_SUPPLY_1']
             temperatureData['SAT1'] = df['TEMPERATURE_SUPPLY_2']
@@ -131,7 +135,7 @@ class Logulator:
 
     def getDamperData(self):
         if 'damperData.csv' not in os.listdir(self.path):
-            df = self.getAllData()
+            df = self.makeAllDataDF()
             damperData = pd.DataFrame()
             damperData['Time date'] = df['Time date']
             damperData['Fresh Air Damper'] = df['FRESH_DAMPER_FEEDBACK']
@@ -185,8 +189,9 @@ class TempLogger(Logulator):
         plt.ylabel('Temperature', color='C0', size=10)
         plt.grid('on', linestyle='--')
         lgd = plt.legend(title='Channel', bbox_to_anchor=(1.05, 1))
-
-        plt.savefig('myfig100.png', dpi=300, facecolor='w', edgecolor='w',
+        plt.get_current_fig_manager().canvas.set_window_title(Logulator.getVersion(self))
+        imageName = ('HVAC Temperature Sensors ' + str(dfTemp.index[0]) + '.png').replace(' ', '_').replace(':', '')
+        plt.savefig(imageName, dpi=300, facecolor='w', edgecolor='w',
                     orientation='landscape', format=None, bbox_extra_artists=(lgd,), bbox_inches='tight',
                     transparent=False, pad_inches=0.1)
         plt.show()
@@ -206,6 +211,7 @@ class DampLogger(Logulator):
         plt.ylabel('% Percentage Open', color='C0', size=10)
         plt.grid('on', linestyle='--')
         lgd = plt.legend(title='Damper Position %', bbox_to_anchor=(1.05, 1))
+        plt.get_current_fig_manager().canvas.set_window_title(Logulator.getVersion(self))
         imageName = ('Damper Position Data ' + str(dfTemp.index[0]) + '.png').replace(' ', '_').replace(':', '')
         plt.savefig(imageName, dpi=300, facecolor='w', edgecolor='w',
                     orientation='landscape', format=None, bbox_extra_artists=(lgd,), bbox_inches='tight',
@@ -225,8 +231,9 @@ class DataLoggerTemperatures(Logulator):
         plt.ylabel('Temperature', color='C0', size=10)
         plt.grid('on', linestyle='--')
         lgd = plt.legend(title='Channel', bbox_to_anchor=(1.05, 1))
-
-        plt.savefig('myfig001.png', dpi=300, facecolor='w', edgecolor='w',
+        plt.get_current_fig_manager().canvas.set_window_title(Logulator.getVersion(self))
+        imageName = ('Data Logger ' + str(dfTemp.index[0]) + '.png').replace(' ', '_').replace(':', '')
+        plt.savefig(imageName, dpi=300, facecolor='w', edgecolor='w',
                     orientation='landscape', format=None, bbox_extra_artists=(lgd,), bbox_inches='tight',
                     transparent=False, pad_inches=0.1)
         plt.show()
@@ -256,7 +263,7 @@ class DataLoggerTemperatures(Logulator):
         plt.ylabel('Temperature', color='C0', size=10)
         plt.grid('on', linestyle='--')
         lgd = plt.legend(title='Input Sensor', bbox_to_anchor=(1.05, 1))
-
+        plt.get_current_fig_manager().canvas.set_window_title(Logulator.getVersion(self))
         imageName = (title + ' ' + str(dfTemps.index[0]) + '.png').replace(' ', '_').replace(':', '')
         plt.savefig(imageName, dpi=300, facecolor='w', edgecolor='w',
                     orientation='landscape', format=None, bbox_extra_artists=(lgd,), bbox_inches='tight',
