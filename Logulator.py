@@ -9,7 +9,7 @@ class Logulator:
         self.all_data = pd.DataFrame()
         self.path = './'
         self.tempDir = self.path + '.temp/'
-        self.version = 'Logulator V1.0'
+        self.version = 'Logulator V2.0'
 
     def getVersion(self):
         return self.version
@@ -62,6 +62,8 @@ class Logulator:
         tempLogs.to_csv('loggerData.csv')
 
     def writeAllDataCSV(self):
+        self.all_data['Time date'] = pd.to_datetime(self.all_data['Time date'])
+        self.all_data = self.all_data[(self.all_data['Time date'].dt.year > 2006)]
         self.all_data.to_csv("all_data.csv", index=False)
         shutil.rmtree(self.tempDir)
 
@@ -153,7 +155,7 @@ class Logulator:
         df = df.reset_index(drop=True)  # Reset the index to line up with the sorted data.
         return df
 
-    def makeTempComparisonDF(self, upper=25, lower=16):
+    def makeTempComparisonDF(self, set_point=22):
         """
         Makes an empty DataFrame with a index using date time incrementing by seconds.
         The date range of the index is set by the info from the data logger as this data
@@ -165,10 +167,9 @@ class Logulator:
         start_date = loggerData.index[0]
         end_date = loggerData.index[-1]
         index = pd.date_range(start_date, end=end_date, freq='S')
-        columns = ['Upper comfort level', 'Lower comfort level']
+        columns = ['Set Point']
         tempComparison = pd.DataFrame(index=index, columns=columns)
-        tempComparison['Upper comfort level'] = tempComparison['Upper comfort level'].fillna(upper)
-        tempComparison['Lower comfort level'] = tempComparison['Lower comfort level'].fillna(lower)
+        tempComparison['Set Point'] = tempComparison['Set Point'].fillna(set_point)
         temperatureData = df[(df['Time date'] >= loggerData.index[0]) &
                              (df['Time date'] <= loggerData.index[-1])].copy().set_index('Time date')
         tempComparison = loggerData.combine_first(tempComparison)
@@ -180,7 +181,7 @@ class TempLogger(Logulator):
     def plotTemperatures(self):
         temperatureData = Logulator.getTempData(self)
         dfTemp = temperatureData.copy().set_index('Time date')
-        dfTemp.plot(kind='line', legend=None)
+        dfTemp.plot(kind='line')
         plt.xticks(color='C0', rotation='vertical')
         plt.xlabel('Time date', color='C0', size=10)
         plt.yticks(color='C0')
@@ -218,6 +219,33 @@ class DampLogger(Logulator):
                     transparent=False, pad_inches=0.1)
         plt.show()
 
+    def plotDamperOverTemps(self):
+        dfTemp = Logulator.getTempData(self).set_index('Time date')
+        damper = Logulator.getDamperData(self).set_index('Time date')
+
+        fig, ax1 = plt.subplots()
+        ax2 = ax1.twinx()
+
+        ax1.set_xlabel('Date Time', color='C0')
+        ax1.set_ylabel('Temperatures', color='C0')
+        ax2.set_ylabel('Damper position %', color='C0')
+        ax1.tick_params(axis='x', labelcolor='C0', labelrotation=90)
+        ax1.tick_params(axis='y', labelcolor='C0')
+        ax2.tick_params(axis='y', labelcolor='C0')
+
+        ax1.plot(dfTemp, label='Temperature supply')
+        ax2.plot(damper, label='Damper')
+
+        plt.get_current_fig_manager().canvas.set_window_title(Logulator.getVersion(self))
+        plt.title('Damper position & HVAC Temperatures', color='C0')
+        plt.grid('on', linestyle='--')
+
+        # plt.savefig('myfig100.png', dpi=300, facecolor='w', edgecolor='w',
+        #            orientation='landscape', format=None, bbox_inches='tight',
+        #            transparent=False, pad_inches=0.1)
+
+        plt.show()
+
 
 class DataLoggerTemperatures(Logulator):
     def plotDataLoggerTemps(self):
@@ -230,15 +258,15 @@ class DataLoggerTemperatures(Logulator):
         plt.title('Data Logger Temperatures', color='C0')
         plt.ylabel('Temperature', color='C0', size=10)
         plt.grid('on', linestyle='--')
-        lgd = plt.legend(title='Channel', bbox_to_anchor=(1.05, 1))
+
+        plt.legend(title='Input Sensor')
         plt.get_current_fig_manager().canvas.set_window_title(Logulator.getVersion(self))
         imageName = ('Data Logger ' + str(dfTemp.index[0]) + '.png').replace(' ', '_').replace(':', '')
         plt.savefig(imageName, dpi=300, facecolor='w', edgecolor='w',
-                    orientation='landscape', format=None, bbox_extra_artists=(lgd,), bbox_inches='tight',
-                    transparent=False, pad_inches=0.1)
+                    orientation='landscape', format=None, transparent=False, pad_inches=0.1)
         plt.show()
 
-    def plotDataLoggerOverHVAC(self, sensor):
+    def plotDataLoggerOverHVAC(self, sensor=0):
         sensor = int(sensor)
         sensors = {1: 'Dining Floor Return', 2: 'External Grill Supply', 3: 'Vestibule E1',
                    4: 'Vestibule E2', 5: 'Guards Rest Room', 6: 'Guards Control Room'}
@@ -252,8 +280,7 @@ class DataLoggerTemperatures(Logulator):
         # ffill will fill in the NaN gaps with previous data
         dfTemps['Logger Temps. °C'] = tempComparison['Logger Temp. °C'].ffill()
         dfTemps['HVAC Temps. °C'] = tempComparison[sensorToTest].ffill()
-        dfTemps['Upper comfort level'] = tempComparison['Upper comfort level']
-        dfTemps['Lower comfort level'] = tempComparison['Lower comfort level']
+        dfTemps['Set Point'] = tempComparison['Set Point']
         dfTemps.plot(kind='line', legend=None)
         plt.xticks(color='C0', rotation='vertical')
         plt.xlabel('Time date', color='C0', size=10)
@@ -262,17 +289,15 @@ class DataLoggerTemperatures(Logulator):
         plt.title(title, color='C0')
         plt.ylabel('Temperature', color='C0', size=10)
         plt.grid('on', linestyle='--')
-        lgd = plt.legend(title='Input Sensor', bbox_to_anchor=(1.05, 1))
+        plt.legend(title='Input Sensor')
         plt.get_current_fig_manager().canvas.set_window_title(Logulator.getVersion(self))
         imageName = (title + ' ' + str(dfTemps.index[0]) + '.png').replace(' ', '_').replace(':', '')
         plt.savefig(imageName, dpi=300, facecolor='w', edgecolor='w',
-                    orientation='landscape', format=None, bbox_extra_artists=(lgd,), bbox_inches='tight',
-                    transparent=False, pad_inches=0.1)
+                    orientation='landscape', format=None, transparent=False, pad_inches=0.1)
         plt.show()
 
 
 def main():
-    choice = 0
     temp = TempLogger()
     damp = DampLogger()
     dataLog = DataLoggerTemperatures()
@@ -283,9 +308,11 @@ def main():
         2. Plot Damper data
         3. Plot DataLogger file
         4. Plot DataLogger file on top of HVAC sensor
+        5. Plot Dampers against temperatures
     """)
     choice = int(input("Enter choice: "))
     os.system('cls')
+
     if choice == 1:
         temp.plotTemperatures()
     elif choice == 2:
@@ -303,6 +330,8 @@ def main():
         6. 71B06    Guard's control room
         """)
         dataLog.plotDataLoggerOverHVAC(input("Sensor: "))
+    elif choice == 5:
+        damp.plotDamperOverTemps()
     else:
         print("Your choice was invalid.")
 
