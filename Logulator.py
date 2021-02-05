@@ -9,7 +9,7 @@ class Logulator:
         self.all_data = pd.DataFrame()
         self.path = './'
         self.tempDir = self.path + '.temp/'
-        self.version = 'Logulator V2.0'
+        self.version = 'Logulator V3.0'
 
     def getVersion(self):
         return self.version
@@ -197,6 +197,35 @@ class TempLogger(Logulator):
                     transparent=False, pad_inches=0.1)
         plt.show()
 
+    def plotTemperaturesOneSensor(self, sensor=0):
+        sensors = {1: 'Dining Floor Return', 2: 'External Grill Supply', 3: 'Vestibule E1',
+                   4: 'Vestibule E2', 5: 'Guards Rest Room', 6: 'Guards Control Room'}
+        sensorsCAF = {1: '71B01', 2: '71B02', 3: '71B03', 4: '71B04', 5: '71B05', 6: '71B06'}
+        sensorToTest = sensors[sensor]
+        title = sensorToTest + ' ' + sensorsCAF[sensor]
+        df = pd.DataFrame()
+        df['Time date'] = Logulator.getTempData(self)['Time date']
+        df[sensors[sensor]] = Logulator.getTempData(self)[sensors[sensor]]
+
+        loggerData = self.getLoggerData()  # Makes a DF using the Data Logger data
+        dfTemp = df[(df['Time date'] >= loggerData.index[0]) &
+                    (df['Time date'] <= loggerData.index[-1])].copy().set_index('Time date')
+        dfTemp.plot(kind='line')
+        plt.xticks(color='C0', rotation='vertical')
+        plt.xlabel('Time date', color='C0', size=10)
+        plt.yticks(color='C0')
+        plt.tight_layout(pad=2)
+        plt.title('HVAC Temperatures', color='C0')
+        plt.ylabel('Temperature', color='C0', size=10)
+        plt.grid('on', linestyle='--')
+        plt.legend(title='Sensor')
+        plt.get_current_fig_manager().canvas.set_window_title(Logulator.getVersion(self))
+        imageName = ('HVAC Temperature Sensors ' + str(dfTemp.index[0]) + '.png').replace(' ', '_').replace(':', '')
+        plt.savefig(imageName, dpi=300, facecolor='w', edgecolor='w',
+                    orientation='landscape', format=None, transparent=False, pad_inches=0.1)
+        plt.show()
+
+
 
 class DampLogger(Logulator):
     def plotDamperPositions(self):
@@ -297,6 +326,18 @@ class DataLoggerTemperatures(Logulator):
         plt.show()
 
 
+def printSensorList():
+    print("""
+    Choose sensor to map:
+        1. 71B01    Return floor sensor
+        2. 71B02    External Grill supply
+        3. 71B03    E1 Vestibule
+        4. 71B04    E2 Vestibule
+        5. 71B05    Guard's rest room
+        6. 71B06    Guard's control room
+        """)
+
+
 def main():
     temp = TempLogger()
     damp = DampLogger()
@@ -309,6 +350,7 @@ def main():
         3. Plot DataLogger file
         4. Plot DataLogger file on top of HVAC sensor
         5. Plot Dampers against temperatures
+        6. Plot one temperature sensor
     """)
     choice = int(input("Enter choice: "))
     os.system('cls')
@@ -320,18 +362,13 @@ def main():
     elif choice == 3:
         dataLog.plotDataLoggerTemps()
     elif choice == 4:
-        print("""
-    Choose sensor to map:
-        1. 71B01    Return floor sensor
-        2. 71B02    External Grill supply
-        3. 71B03    E1 Vestibule
-        4. 71B04    E2 Vestibule
-        5. 71B05    Guard's rest room
-        6. 71B06    Guard's control room
-        """)
-        dataLog.plotDataLoggerOverHVAC(input("Sensor: "))
+        printSensorList()
+        dataLog.plotDataLoggerOverHVAC(int(input("Sensor: ")))
     elif choice == 5:
         damp.plotDamperOverTemps()
+    elif choice == 6:
+        printSensorList()
+        temp.plotTemperaturesOneSensor(int(input("Sensor: ")))
     else:
         print("Your choice was invalid.")
 
