@@ -2,6 +2,7 @@ import pandas as pd
 import os
 import matplotlib.pyplot as plt
 import shutil
+import numpy as np
 
 
 class Logulator:
@@ -206,6 +207,7 @@ class TempLogger(Logulator):
         df = pd.DataFrame()
         df['Time date'] = Logulator.getTempData(self)['Time date']
         df[sensors[sensor]] = Logulator.getTempData(self)[sensors[sensor]]
+        df['Logger Data'] = np.nan
 
         loggerData = self.getLoggerData()  # Makes a DF using the Data Logger data
         dfTemp = df[(df['Time date'] >= loggerData.index[0]) &
@@ -215,12 +217,12 @@ class TempLogger(Logulator):
         plt.xlabel('Time date', color='C0', size=10)
         plt.yticks(color='C0')
         plt.tight_layout(pad=2)
-        plt.title('HVAC Temperatures', color='C0')
+        plt.title(title + ' to data logger', color='C0')
         plt.ylabel('Temperature', color='C0', size=10)
         plt.grid('on', linestyle='--')
         plt.legend(title='Sensor')
         plt.get_current_fig_manager().canvas.set_window_title(Logulator.getVersion(self))
-        imageName = ('HVAC Temperature Sensors ' + str(dfTemp.index[0]) + '.png').replace(' ', '_').replace(':', '')
+        imageName = (title + str(dfTemp.index[0]) + '.png').replace(' ', '_').replace(':', '')
         plt.savefig(imageName, dpi=300, facecolor='w', edgecolor='w',
                     orientation='landscape', format=None, transparent=False, pad_inches=0.1)
         plt.show()
