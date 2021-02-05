@@ -190,12 +190,11 @@ class TempLogger(Logulator):
         plt.title('HVAC Temperatures', color='C0')
         plt.ylabel('Temperature', color='C0', size=10)
         plt.grid('on', linestyle='--')
-        lgd = plt.legend(title='Channel', bbox_to_anchor=(1.05, 1))
+        plt.legend(title='Sensor')
         plt.get_current_fig_manager().canvas.set_window_title(Logulator.getVersion(self))
         imageName = ('HVAC Temperature Sensors ' + str(dfTemp.index[0]) + '.png').replace(' ', '_').replace(':', '')
         plt.savefig(imageName, dpi=300, facecolor='w', edgecolor='w',
-                    orientation='landscape', format=None, bbox_extra_artists=(lgd,), bbox_inches='tight',
-                    transparent=False, pad_inches=0.1)
+                    orientation='landscape', format=None, transparent=False, pad_inches=0.1)
         plt.show()
 
     def plotTemperaturesOneSensor(self, sensor=0):
@@ -228,7 +227,6 @@ class TempLogger(Logulator):
         plt.show()
 
 
-
 class DampLogger(Logulator):
     def plotDamperPositions(self):
         damperData = Logulator.getDamperData(self)
@@ -242,12 +240,11 @@ class DampLogger(Logulator):
         plt.title('HVAC Temperatures', color='C0')
         plt.ylabel('% Percentage Open', color='C0', size=10)
         plt.grid('on', linestyle='--')
-        lgd = plt.legend(title='Damper Position %', bbox_to_anchor=(1.05, 1))
+        plt.legend(title='Damper Position %')
         plt.get_current_fig_manager().canvas.set_window_title(Logulator.getVersion(self))
         imageName = ('Damper Position Data ' + str(dfTemp.index[0]) + '.png').replace(' ', '_').replace(':', '')
         plt.savefig(imageName, dpi=300, facecolor='w', edgecolor='w',
-                    orientation='landscape', format=None, bbox_extra_artists=(lgd,), bbox_inches='tight',
-                    transparent=False, pad_inches=0.1)
+                    orientation='landscape', format=None, transparent=False, pad_inches=0.1)
         plt.show()
 
     def plotDamperOverTemps(self):
@@ -270,10 +267,6 @@ class DampLogger(Logulator):
         plt.get_current_fig_manager().canvas.set_window_title(Logulator.getVersion(self))
         plt.title('Damper position & HVAC Temperatures', color='C0')
         plt.grid('on', linestyle='--')
-
-        # plt.savefig('myfig100.png', dpi=300, facecolor='w', edgecolor='w',
-        #            orientation='landscape', format=None, bbox_inches='tight',
-        #            transparent=False, pad_inches=0.1)
 
         plt.show()
 
