@@ -6,6 +6,9 @@ import numpy as np
 
 
 class Logulator:
+    """
+    Class of tools to construct and plot CSV data for MERAK HVAC logs.
+    """
     def __init__(self):
         self.all_data = pd.DataFrame()
         self.path = './'
@@ -13,11 +16,21 @@ class Logulator:
         self.version = 'Logulator V3.0'
 
     def getVersion(self):
+        """
+        Returns the current revision of Logulator
+        :return:
+        """
         return self.version
 
     def makeAllDataDF(self):
+        """
+        Constructs a Pandas Data Frame from a directory of MERAK HVAC CSV files.
+        Creates a file all_data.csv from a bunch of HVAC files if it hasn't already
+        been created.
+        :return: Pandas Data Frame
+        """
         if 'all_data.csv' not in os.listdir(self.path):
-            self.setupCSVFiles('xls')
+            self.makeTemporaryTXTFilesForCSV('xls')
             self.writeTempCSVFiles()
             self.csvToDataFrame()
             self.writeAllDataCSV()
@@ -25,7 +38,13 @@ class Logulator:
 
         return pd.read_csv('all_data.csv')
 
-    def setupCSVFiles(self, extension):
+    def makeTemporaryTXTFilesForCSV(self, extension):
+        """
+        Helper method for makeAllDataDF()
+        Creates a temporary directory to store txt versions of the xls files.
+        :param extension:
+        :return: None
+        """
         self.path = os.getcwd()
         files = os.listdir(self.path)
         os.makedirs(self.tempDir, exist_ok=True)
@@ -38,6 +57,12 @@ class Logulator:
                 counter += 1
 
     def writeTempCSVFiles(self):
+        """
+        Helper method for makeAllDataDF()
+        Creates a bunch of csv files from the txt files created in makeTemporaryTXTFilesForCSV()
+        These are processed specifically for the format that is produced by the train.
+        :return: None
+        """
         tempFiles = os.listdir(self.tempDir)
         files_txt = [f for f in tempFiles if f[-3:] == 'txt']
         counter = 0
@@ -49,26 +74,46 @@ class Logulator:
                 counter += 1
 
     def createDataLoggerCSV(self):
+        """
+        Creates a CSV file from the Data Logger xlsx file.
+        :return:
+        """
+        loggerDF = pd.DataFrame()
         tempLogs = pd.DataFrame()
-        self.path = os.getcwd()
-        files = os.listdir(self.path)
-        os.makedirs(self.tempDir, exist_ok=True)
+        path = os.getcwd()
+        files = os.listdir(path)
+        tempDir = './.tempDL/'
+        os.makedirs(tempDir, exist_ok=True)
         files_xlsx = [f for f in files if f[-4:] == 'xlsx']
         counter = 0
         for file in files_xlsx:
-            os.rename(file, self.tempDir + str(counter) + '_New_File.xlsx')
-            data = pd.read_excel(self.tempDir + str(counter) + '_New_File.xlsx', engine='openpyxl')
+            shutil.copy(file, tempDir + str(counter) + '_New_File.xlsx')
+            data = pd.read_excel(tempDir + str(counter) + '_New_File.xlsx', engine='openpyxl')
             tempLogs = tempLogs.append(data)
             counter += 1
-        tempLogs.to_csv('loggerData.csv')
+        loggerDF['Time date'] = tempLogs['Time']
+        loggerDF['Logger Temp. °C'] = tempLogs['Celsius(°C)']
+        loggerDF = self.sortByDateAndReIndex(loggerDF)
+        loggerDF.to_csv('loggerData.csv')
+        shutil.rmtree(tempDir)
 
     def writeAllDataCSV(self):
-        self.all_data['Time date'] = pd.to_datetime(self.all_data['Time date'])
+        """
+        Helper method for makeAllDataDF()
+        Sorts the all_data DF. Removes the 2006 data (MERAK Epoch).
+        Removes the tempdir.
+        :return: None
+        """
+        self.sortByDateAndReIndex(self.all_data).to_csv("all_data.csv", index=False)
         self.all_data = self.all_data[(self.all_data['Time date'].dt.year > 2006)]
-        self.all_data.to_csv("all_data.csv", index=False)
         shutil.rmtree(self.tempDir)
 
     def csvToDataFrame(self):
+        """
+        Helper method for makeAllDataDF()
+        Reads all the csv files in the ./temp dir into a dataframe
+        :return: None
+        """
         tempFiles = os.listdir(self.tempDir)
         self.all_data = pd.DataFrame(None)
         files_csv = [f for f in tempFiles if f[-3:] == 'csv']
@@ -109,27 +154,8 @@ class Logulator:
         If there is no loggerData.csv file available, it will make one with the csv logs.
         :return: loggerDF of type DataFrame
         """
-        loggerDF = pd.DataFrame()
         if 'loggerData.csv' not in os.listdir(self.path):
-            tempLogs = pd.DataFrame()
-            path = os.getcwd()
-            files = os.listdir(path)
-            tempDir = './.tempDL/'
-            os.makedirs(tempDir, exist_ok=True)
-            files_xlsx = [f for f in files if f[-4:] == 'xlsx']
-            counter = 0
-            for file in files_xlsx:
-                shutil.copy(file, tempDir + str(counter) + '_New_File.xlsx')
-                data = pd.read_excel(tempDir + str(counter) + '_New_File.xlsx', engine='openpyxl')
-                tempLogs = tempLogs.append(data)
-                counter += 1
-            loggerDF['Time date'] = tempLogs['Time']
-            loggerDF['Logger Temp. °C'] = tempLogs['Celsius(°C)']
-            loggerDF['Time date'] = pd.to_datetime(loggerDF['Time date'])
-            loggerDF = self.sortByDateAndReIndex(loggerDF)
-            loggerDF.to_csv('loggerData.csv')
-            shutil.rmtree(tempDir)
-
+            self.createDataLoggerCSV()
         loggerDF = pd.read_csv('./loggerData.csv')
         loggerDF = loggerDF.set_index('Time date')
         loggerDF = loggerDF.dropna(how='any')
@@ -137,6 +163,11 @@ class Logulator:
         return loggerDF
 
     def getDamperData(self):
+        """
+        Creates a Data Frame from the MERAK csv files.
+        Specifically holds the Damper position data.
+        :return: Pandas Data Frame
+        """
         if 'damperData.csv' not in os.listdir(self.path):
             df = self.makeAllDataDF()
             damperData = pd.DataFrame()
@@ -147,10 +178,14 @@ class Logulator:
 
         damperData = pd.read_csv("damperData.csv")
         damperData = self.sortByDateAndReIndex(damperData)
-        # damperData = damperData.set_index('Time date')
         return damperData
 
     def sortByDateAndReIndex(self, df):
+        """
+        Helper method that sets up the Data Frame to be indexed by date.
+        :param df:
+        :return:
+        """
         df['Time date'] = pd.to_datetime(df['Time date'])
         df = df.sort_values(by='Time date')
         df = df.reset_index(drop=True)  # Reset the index to line up with the sorted data.
@@ -180,6 +215,10 @@ class Logulator:
 
 class TempLogger(Logulator):
     def plotTemperatures(self):
+        """
+        Plots all the temperatures.
+        :return:
+        """
         temperatureData = Logulator.getTempData(self)
         dfTemp = temperatureData.copy().set_index('Time date')
         dfTemp.plot(kind='line')
@@ -198,6 +237,11 @@ class TempLogger(Logulator):
         plt.show()
 
     def plotTemperaturesOneSensor(self, sensor=0):
+        """
+        Plots the temperatures from the MERAK unit for one selected sensor.
+        :param sensor:
+        :return:
+        """
         sensors = {1: 'Dining Floor Return', 2: 'External Grill Supply', 3: 'Vestibule E1',
                    4: 'Vestibule E2', 5: 'Guards Rest Room', 6: 'Guards Control Room'}
         sensorsCAF = {1: '71B01', 2: '71B02', 3: '71B03', 4: '71B04', 5: '71B05', 6: '71B06'}
@@ -229,6 +273,10 @@ class TempLogger(Logulator):
 
 class DampLogger(Logulator):
     def plotDamperPositions(self):
+        """
+        Plots the MERAK damper position data.
+        :return:
+        """
         damperData = Logulator.getDamperData(self)
 
         dfTemp = damperData.copy().set_index('Time date')
@@ -248,6 +296,10 @@ class DampLogger(Logulator):
         plt.show()
 
     def plotDamperOverTemps(self):
+        """
+        Plots the Damper positions over the top of the temperature data.
+        :return:
+        """
         dfTemp = Logulator.getTempData(self).set_index('Time date')
         damper = Logulator.getDamperData(self).set_index('Time date')
 
@@ -273,6 +325,10 @@ class DampLogger(Logulator):
 
 class DataLoggerTemperatures(Logulator):
     def plotDataLoggerTemps(self):
+        """
+        Plots the Data Logger files.
+        :return:
+        """
         dfTemp = Logulator.getLoggerData(self).copy()
         dfTemp.plot(kind='line', legend=None)
         plt.xticks(color='C0', rotation='vertical')
@@ -291,6 +347,11 @@ class DataLoggerTemperatures(Logulator):
         plt.show()
 
     def plotDataLoggerOverHVAC(self, sensor=0):
+        """
+        Plots the data logger file over the top of the MERAK data for the same time period.
+        :param sensor:
+        :return:
+        """
         sensor = int(sensor)
         sensors = {1: 'Dining Floor Return', 2: 'External Grill Supply', 3: 'Vestibule E1',
                    4: 'Vestibule E2', 5: 'Guards Rest Room', 6: 'Guards Control Room'}
