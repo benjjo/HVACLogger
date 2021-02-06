@@ -13,7 +13,7 @@ class Logulator:
         self.all_data = pd.DataFrame()
         self.path = './'
         self.tempDir = self.path + '.temp/'
-        self.version = 'Logulator V3.0'
+        self.version = 'Logulator V3.1'
 
     def getVersion(self):
         """
