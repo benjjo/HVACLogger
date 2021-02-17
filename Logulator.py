@@ -13,7 +13,7 @@ class Logulator:
         self.all_data = pd.DataFrame()
         self.path = './'
         self.tempDir = self.path + '.temp/'
-        self.version = 'Logulator V3.1'
+        self.version = 'Logulator V3.2'
 
     def getVersion(self):
         """
@@ -157,6 +157,7 @@ class Logulator:
         if 'loggerData.csv' not in os.listdir(self.path):
             self.createDataLoggerCSV()
         loggerDF = pd.read_csv('./loggerData.csv')
+        loggerDF['Time date'] = pd.to_datetime(loggerDF['Time date'])
         loggerDF = loggerDF.set_index('Time date')
         loggerDF = loggerDF.dropna(how='any')
         loggerDF = loggerDF.drop(loggerDF.columns[[0]], axis=1)  # Remove superfluous column
@@ -171,6 +172,7 @@ class Logulator:
         if 'damperData.csv' not in os.listdir(self.path):
             df = self.makeAllDataDF()
             damperData = pd.DataFrame()
+            df['Time date'] = pd.to_datetime(df['Time date'])  # new entry
             damperData['Time date'] = df['Time date']
             damperData['Fresh Air Damper'] = df['FRESH_DAMPER_FEEDBACK']
             damperData['Return Air Damper'] = df['RETURN_DAMPER_FEEDBACK']
