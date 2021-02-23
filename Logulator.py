@@ -13,7 +13,7 @@ class Logulator:
         self.all_data = pd.DataFrame()
         self.path = './'
         self.tempDir = self.path + '.temp/'
-        self.version = 'Logulator V3.2'
+        self.version = 'Logulator V3.3'
 
     def getVersion(self):
         """
@@ -100,12 +100,12 @@ class Logulator:
     def writeAllDataCSV(self):
         """
         Helper method for makeAllDataDF()
-        Sorts the all_data DF. Removes the 2006 data (MERAK Epoch).
+        Sorts the all_data DF. Removes the 2019 or less data.
         Removes the tempdir.
         :return: None
         """
         self.sortByDateAndReIndex(self.all_data).to_csv("all_data.csv", index=False)
-        self.all_data = self.all_data[(self.all_data['Time date'].dt.year > 2006)]
+        self.all_data = self.all_data[(self.all_data['Time date'].dt.year > 2019)]
         shutil.rmtree(self.tempDir)
 
     def csvToDataFrame(self):
@@ -244,8 +244,12 @@ class TempLogger(Logulator):
         :param sensor:
         :return:
         """
-        sensors = {1: 'Dining Floor Return', 2: 'External Grill Supply', 3: 'Vestibule E1',
-                   4: 'Vestibule E2', 5: 'Guards Rest Room', 6: 'Guards Control Room'}
+        sensors = {1: 'Dining Floor Return',
+                   2: 'External Grill Supply',
+                   3: 'Vestibule E1',
+                   4: 'Vestibule E2',
+                   5: 'Guards Rest Room',
+                   6: 'Guards Control Room'}
         sensorsCAF = {1: '71B01', 2: '71B02', 3: '71B03', 4: '71B04', 5: '71B05', 6: '71B06'}
         sensorToTest = sensors[sensor]
         title = sensorToTest + ' ' + sensorsCAF[sensor]
@@ -388,11 +392,11 @@ def printSensorList():
     print("""
     Choose sensor to map:
         1. 71B01    Return floor sensor
-        2. 71B02    External Grill supply
+        2. 71B02    Fresh air supply
         3. 71B03    E1 Vestibule
         4. 71B04    E2 Vestibule
-        5. 71B05    Guard's rest room
-        6. 71B06    Guard's control room
+        5. 71B05    Crew room
+        6. 71B06    Guard's room
         """)
 
 
