@@ -13,7 +13,36 @@ class Logulator:
         self.all_data = pd.DataFrame()
         self.path = './'
         self.tempDir = self.path + '.temp/'
-        self.version = 'Logulator V3.3'
+        self.version = 'Logulator V4.0'
+        self.coachType = str()
+        self.seatVars = ('Time date', 'Time date', 'Type', 'Car type', 'External Supply', 'TEMPERATURE_SUPPLY_1',
+                         'SAT1', 'TEMPERATURE_SUPPLY_2', 'SAT2', 'TEMPERATURE_RETURN',
+                         'Vestibule E2', 'TEMP. VESTIBULE_LEFT', 'Vestibule E1', 'TEMP. STAFF_WC',
+                         'Return Air', 'TEMPERATURE_GUARD_GALLEY_WC',
+                         'Guards Room', 'TEMP. BERTH_1')
+        self.clubVars = ('Time date', 'Time date', 'Type', 'Car type', 'External Supply', 'TEMPERATURE_SUPPLY_1',
+                         'SAT1', 'TEMPERATURE_SUPPLY_2', 'SAT2', 'TEMPERATURE_RETURN',
+                         'Vestibule E2', 'TEMP. VESTIBULE_LEFT', 'Vestibule E1', 'TEMP. STAFF_WC',
+                         'Return Air', 'TEMPERATURE_GUARD_GALLEY_WC',
+                         'Crew Room', 'TEMP. GUARD_GALLEY_WC', 'Guards Room', 'TEMP. BERTH_1')
+        self.accVars = ('Time date', 'Time date', 'Type', 'Car type', 'External Supply', 'TEMPERATURE_SUPPLY_1',
+                        'SAT1', 'TEMPERATURE_SUPPLY_2', 'SAT2', 'TEMPERATURE_RETURN',
+                        'Vestibule E2', 'TEMP. VESTIBULE_LEFT', 'Vestibule E1', 'TEMP. STAFF_WC',
+                        'Return Air', 'TEMPERATURE_GUARD_GALLEY_WC',
+                        'PRM E1', 'TEMP. BERTH_1', 'PRM E2', 'TEMP. GUARD_GALLEY_WC',
+                        'Berth 1', 'NOT_USED_1_10', 'Berth 2', 'TEMPERATURE_BERTH_10',
+                        'Berth 3', 'TEMPERATURE_BERTH_9', 'Berth 4', 'TEMPERATURE_BERTH_8',
+                        'Berth 5', 'NOT_USED_1_9', 'Berth 6', 'NOT_USED_1_8')
+        self.sleeperVars = ('Time date', 'Time date', 'Type', 'Car type', 'External Supply', 'TEMPERATURE_SUPPLY_1',
+                            'SAT1', 'TEMPERATURE_SUPPLY_2', 'SAT2', 'TEMPERATURE_RETURN',
+                            'Vestibule E2', 'TEMP. VESTIBULE_LEFT', 'Vestibule E1', 'TEMP. STAFF_WC',
+                            'Return Air', 'TEMPERATURE_GUARD_GALLEY_WC',
+                            'Galley', 'TEMP. BERTH_1', 'STD WC', 'TEMP. GUARD_GALLEY_WC',
+                            'Berth 1', 'NOT_USED_1_10', 'Berth 2', 'TEMPERATURE_BERTH_10',
+                            'Berth 3', 'TEMPERATURE_BERTH_9', 'Berth 4', 'TEMPERATURE_BERTH_8',
+                            'Berth 5', 'NOT_USED_1_9', 'Berth 6', 'NOT_USED_1_8', 'Berth 7', 'TEMPERATURE_BERTH_5_2',
+                            'Berth 8', 'TEMPERATURE_BERTH_4', 'Berth 9', 'TEMPERATURE_BERTH_3_5',
+                            'Berth 10', 'TEMPERATURE_BERTH_2_4')
 
     def getVersion(self):
         """
@@ -21,6 +50,16 @@ class Logulator:
         :return:
         """
         return self.version
+
+    def setCoachType(self, df: pd.DataFrame):
+        try:
+            self.coachType = df['Car type'].mode().iloc[0]
+        except IndexError:
+            print('ʍǝ ɐɹǝ ɥɐʌınƃ ʇǝɔɥnıɔɐl dıɟɟıɔnlʇıǝs')
+            input('Your data is probably from 2006 - ABORT! ABORT! ABORT!')
+
+    def getCoachType(self) -> str:
+        return self.coachType
 
     def makeAllDataDF(self):
         """
@@ -35,8 +74,10 @@ class Logulator:
             self.csvToDataFrame()
             self.writeAllDataCSV()
             self.all_data.to_csv("all_data.csv", index=False)
+        allDataDF = pd.read_csv('all_data.csv')
+        self.setCoachType(allDataDF)
 
-        return pd.read_csv('all_data.csv')
+        return allDataDF
 
     def makeTemporaryTXTFilesForCSV(self, extension):
         """
@@ -122,6 +163,30 @@ class Logulator:
             data = pd.read_csv(self.tempDir + file)
             self.all_data = self.all_data.append(data)
 
+    def makeTempdataCSV(self):
+        count = 0
+        var_tuple = tuple()
+        df = pd.DataFrame()
+        allData = self.makeAllDataDF()
+
+        if self.coachType == 'SEATED':
+            var_tuple = self.seatVars
+        elif self.coachType == 'CLUB':
+            var_tuple = self.clubVars
+        elif self.coachType == 'ACCESSIBLE':
+            var_tuple = self.accVars
+        elif self.coachType == 'SLEEPER':
+            var_tuple = self.sleeperVars
+        else:
+            print('ʍǝ ɐɹǝ ɥɐʌınƃ ʇǝɔɥnıɔɐl dıɟɟıɔnlʇıǝs')
+            input('Something went terribly wrong - ABORT! ABORT! ABORT!')
+
+        var_num = len(var_tuple)
+        while count < var_num:
+            df[var_tuple[count]] = allData[var_tuple[count + 1]]
+            count += 2
+        return df
+
     def getTempData(self):
         """
         Returns a DataFrame using the temperature sensor data from the HVAC unit.
@@ -129,19 +194,10 @@ class Logulator:
         HVAC csv logs.
         :return: temperatureData of type DataFrame
         """
-        temperatureData = pd.DataFrame()
+        # temperatureData = pd.DataFrame()
 
         if 'temperatureData.csv' not in os.listdir(self.path):
-            df = self.makeAllDataDF()
-            temperatureData['Time date'] = df['Time date']
-            temperatureData['External Grill Supply'] = df['TEMPERATURE_SUPPLY_1']
-            temperatureData['SAT1'] = df['TEMPERATURE_SUPPLY_2']
-            temperatureData['SAT2'] = df['TEMPERATURE_RETURN']
-            temperatureData['Vestibule E2'] = df['TEMP. VESTIBULE_LEFT']
-            temperatureData['Vestibule E1'] = df['TEMP. STAFF_WC']
-            temperatureData['Dining Floor Return'] = df['TEMPERATURE_GUARD_GALLEY_WC']
-            temperatureData['Guards Rest Room'] = df['TEMP. GUARD_GALLEY_WC']
-            temperatureData['Guards Control Room'] = df['TEMP. BERTH_1']
+            temperatureData = self.makeTempdataCSV()
             temperatureData.to_csv("temperatureData.csv", index=False)
 
         temperatureData = pd.read_csv("temperatureData.csv")
@@ -228,7 +284,7 @@ class TempLogger(Logulator):
         plt.xlabel('Time date', color='C0', size=10)
         plt.yticks(color='C0')
         plt.tight_layout(pad=2)
-        plt.title('HVAC Temperatures', color='C0')
+        plt.title('HVAC Temperatures: ' + Logulator.getCoachType(self), color='C0')
         plt.ylabel('Temperature', color='C0', size=10)
         plt.grid('on', linestyle='--')
         plt.legend(title='Sensor')
