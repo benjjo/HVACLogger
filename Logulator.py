@@ -3,17 +3,20 @@ import os
 import matplotlib.pyplot as plt
 import shutil
 import numpy as np
+from time import sleep
 
 
 class Logulator:
     """
     Class of tools to construct and plot CSV data for MERAK HVAC logs.
     """
+    coach_number = None
+
     def __init__(self):
         self.all_data = pd.DataFrame()
         self.path = './'
         self.tempDir = self.path + '.temp/'
-        self.version = 'Logulator V4.1'
+        self.version = 'Logulator Lite V4.1a'
         self.coachType = str()
         self.seatVars = ('Time date', 'Time date', 'Type', 'Car type', 'External Supply', 'TEMPERATURE_SUPPLY_1',
                          'SAT1', 'TEMPERATURE_SUPPLY_2', 'SAT2', 'TEMPERATURE_RETURN',
@@ -194,7 +197,6 @@ class Logulator:
         HVAC csv logs.
         :return: temperatureData of type DataFrame
         """
-        # temperatureData = pd.DataFrame()
 
         if 'temperatureData.csv' not in os.listdir(self.path):
             temperatureData = self.makeTempdataCSV()
@@ -270,6 +272,14 @@ class Logulator:
         tempComparison = temperatureData.combine_first(tempComparison)
         return tempComparison
 
+    @classmethod
+    def getCoachNumber(cls):
+        return Logulator.coach_number
+
+    @classmethod
+    def setCoachNumber(cls, number):
+        Logulator.coach_number = number
+
 
 class TempLogger(Logulator):
     def plotTemperatures(self):
@@ -278,13 +288,18 @@ class TempLogger(Logulator):
         :return:
         """
         temperatureData = Logulator.getTempData(self)
+
+        title_suffix = Logulator.getCoachNumber()
+        if title_suffix == '':
+            title_suffix = Logulator.getCoachType(self)
+
         dfTemp = temperatureData.copy().set_index('Time date')
         dfTemp.plot(kind='line')
         plt.xticks(color='C0', rotation='vertical')
         plt.xlabel('Time date', color='C0', size=10)
         plt.yticks(color='C0')
         plt.tight_layout(pad=2)
-        plt.title('HVAC Temperatures: ' + Logulator.getCoachType(self), color='C0')
+        plt.title('HVAC Temperatures: ' + title_suffix, color='C0')
         plt.ylabel('Temperature', color='C0', size=10)
         plt.grid('on', linestyle='--')
         plt.legend(title='Sensor')
@@ -458,38 +473,20 @@ def printSensorList():
 
 def main():
     temp = TempLogger()
-    damp = DampLogger()
-    dataLog = DataLoggerTemperatures()
 
-    print("""
-    Choose operation:
-        1. Plot HVAC temperatures
-        2. Plot Damper data
-        3. Plot DataLogger file
-        4. Plot DataLogger file on top of HVAC sensor
-        5. Plot Dampers against temperatures
-        6. Plot one temperature sensor
-    """)
-    choice = int(input("Enter choice: "))
+    choice = input("Enter Coach number or just 'ENTER' to continue: ")
+    print('\rStandby while mainframe vulnerabilities are compromised...', end='')
+    sleep(1)
+    print('\rStandby while mainframe vulnerabilities are compromised.. ', end='')
+    sleep(1)
+    print('\rStandby while mainframe vulnerabilities are compromised.  ', end='')
+    sleep(1)
+    print('\rBackdoor hacked                                           ', end='')
+    sleep(0.5)
     os.system('cls')
 
-    if choice == 1:
-        temp.plotTemperatures()
-    elif choice == 2:
-        damp.plotDamperPositions()
-    elif choice == 3:
-        dataLog.plotDataLoggerTemps()
-    elif choice == 4:
-        printSensorList()
-        dataLog.plotDataLoggerOverHVAC(int(input("Sensor: ")))
-    elif choice == 5:
-        damp.plotDamperOverTemps()
-    elif choice == 6:
-        printSensorList()
-        temp.plotTemperaturesOneSensor(int(input("Sensor: ")))
-    else:
-        print("Your choice was invalid.")
-
+    Logulator.setCoachNumber(choice)
+    temp.plotTemperatures()
 
 if __name__ == "__main__":
     main()
