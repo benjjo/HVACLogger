@@ -13,7 +13,7 @@ class Logulator:
         self.all_data = pd.DataFrame()
         self.path = './'
         self.tempDir = self.path + '.temp/'
-        self.version = 'Logulator V4.0'
+        self.version = 'Logulator V4.1'
         self.coachType = str()
         self.seatVars = ('Time date', 'Time date', 'Type', 'Car type', 'External Supply', 'TEMPERATURE_SUPPLY_1',
                          'SAT1', 'TEMPERATURE_SUPPLY_2', 'SAT2', 'TEMPERATURE_RETURN',
@@ -29,10 +29,10 @@ class Logulator:
                         'SAT1', 'TEMPERATURE_SUPPLY_2', 'SAT2', 'TEMPERATURE_RETURN',
                         'Vestibule E2', 'TEMP. VESTIBULE_LEFT', 'Vestibule E1', 'TEMP. STAFF_WC',
                         'Return Air', 'TEMPERATURE_GUARD_GALLEY_WC',
-                        'PRM E1', 'TEMP. BERTH_1', 'PRM E2', 'TEMP. GUARD_GALLEY_WC',
-                        'Berth 1', 'NOT_USED_1_10', 'Berth 2', 'TEMPERATURE_BERTH_10',
-                        'Berth 3', 'TEMPERATURE_BERTH_9', 'Berth 4', 'TEMPERATURE_BERTH_8',
-                        'Berth 5', 'NOT_USED_1_9', 'Berth 6', 'NOT_USED_1_8')
+                        'PRM E1', 'TEMP. GUARD_GALLEY_WC', 'PRM E2', 'TEMP. BERTH_1',
+                        'Berth 1', 'TEMP. BERTH_7_6', 'Berth 2', 'TEMP. BERTH_6_3',
+                        'Berth 3', 'TEMP. BERTH_5_2', 'Berth 4', 'TEMP. BERTH_4',
+                        'Berth 5', 'TEMP. BERTH_3_5', 'Berth 6', 'TEMP. BERTH_2_4')
         self.sleeperVars = ('Time date', 'Time date', 'Type', 'Car type', 'External Supply', 'TEMPERATURE_SUPPLY_1',
                             'SAT1', 'TEMPERATURE_SUPPLY_2', 'SAT2', 'TEMPERATURE_RETURN',
                             'Vestibule E2', 'TEMP. VESTIBULE_LEFT', 'Vestibule E1', 'TEMP. STAFF_WC',
