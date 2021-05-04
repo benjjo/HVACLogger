@@ -13,7 +13,7 @@ class Logulator:
         self.all_data = pd.DataFrame()
         self.path = './'
         self.tempDir = self.path + '.temp/'
-        self.version = 'Logulator V4.1'
+        self.version = 'Logulator V5.0'
         self.coachType = str()
         self.seatVars = ('Time date', 'Time date', 'Type', 'Car type', 'External Supply', 'TEMPERATURE_SUPPLY_1',
                          'SAT1', 'TEMPERATURE_SUPPLY_2', 'SAT2', 'TEMPERATURE_RETURN',
