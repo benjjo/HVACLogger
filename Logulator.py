@@ -43,13 +43,6 @@ class Logulator:
                             'Berth 5', 'NOT_USED_1_9', 'Berth 6', 'NOT_USED_1_8', 'Berth 7', 'TEMPERATURE_BERTH_5_2',
                             'Berth 8', 'TEMPERATURE_BERTH_4', 'Berth 9', 'TEMPERATURE_BERTH_3_5',
                             'Berth 10', 'TEMPERATURE_BERTH_2_4')
-        self.seated_temp_vars = ('Vestibule E2', 'Vestibule E1', 'Return Air', 'Guards Room')
-        self.club_temp_vars = ('Vestibule E2', 'Vestibule E1', 'Return Air', 'Crew Room', 'Guards Room')
-        self.acc_temp_vars = ('Vestibule E2', 'Vestibule E1', 'Return Air', 'PRM E1', 'PRM E2',
-                              'Berth 1', 'Berth 2', 'Berth 3', 'Berth 4', 'Berth 5', 'Berth 6')
-        self.sleeper_temp_vars = ('Vestibule E2', 'Vestibule E1', 'Return Air', 'PRM E1', 'PRM E2',
-                                  'Berth 1', 'Berth 2', 'Berth 3', 'Berth 4', 'Berth 5',
-                                  'Berth 6', 'Berth 7', 'Berth 8', 'Berth 9', 'Berth 10')
 
     def getVersion(self):
         """
@@ -175,29 +168,24 @@ class Logulator:
         var_tuple = tuple()
         df = pd.DataFrame()
         allData = self.makeAllDataDF()
-        avg_temp_list = list()
 
         if self.coachType == 'SEATED':
             var_tuple = self.seatVars
-            avg_temp_list = self.seated_temp_vars
         elif self.coachType == 'CLUB':
             var_tuple = self.clubVars
-            avg_temp_list = self.club_temp_vars
         elif self.coachType == 'ACCESSIBLE':
             var_tuple = self.accVars
-            avg_temp_list = self.acc_temp_vars
         elif self.coachType == 'SLEEPER':
             var_tuple = self.sleeperVars
-            avg_temp_list = self.sleeper_temp_vars
         else:
             print('ʍǝ ɐɹǝ ɥɐʌınƃ ʇǝɔɥnıɔɐl dıɟɟıɔnlʇıǝs')
             input('Something went terribly wrong - ABORT! ABORT! ABORT!')
-
         var_num = len(var_tuple)
         while count < var_num:
             df[var_tuple[count]] = allData[var_tuple[count + 1]]
             count += 2
-        df['Average'] = df[avg_temp_list].mean(axis=1)
+        print(allData[var_tuple[10::2]])
+        #df['Average'] = allData[var_tuple[10::2]].mean(axis=1)
         return df
 
     def getTempData(self):
