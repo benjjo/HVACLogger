@@ -175,15 +175,20 @@ class Logulator:
         var_tuple = tuple()
         df = pd.DataFrame()
         allData = self.makeAllDataDF()
+        avg_temp_list = list()
 
         if self.coachType == 'SEATED':
             var_tuple = self.seatVars
+            avg_temp_list = self.seated_temp_vars
         elif self.coachType == 'CLUB':
             var_tuple = self.clubVars
+            avg_temp_list = self.club_temp_vars
         elif self.coachType == 'ACCESSIBLE':
             var_tuple = self.accVars
+            avg_temp_list = self.acc_temp_vars
         elif self.coachType == 'SLEEPER':
             var_tuple = self.sleeperVars
+            avg_temp_list = self.sleeper_temp_vars
         else:
             print('ʍǝ ɐɹǝ ɥɐʌınƃ ʇǝɔɥnıɔɐl dıɟɟıɔnlʇıǝs')
             input('Something went terribly wrong - ABORT! ABORT! ABORT!')
@@ -192,6 +197,7 @@ class Logulator:
         while count < var_num:
             df[var_tuple[count]] = allData[var_tuple[count + 1]]
             count += 2
+        df['Average'] = df[avg_temp_list].mean(axis=1)
         return df
 
     def getTempData(self):
@@ -201,7 +207,6 @@ class Logulator:
         HVAC csv logs.
         :return: temperatureData of type DataFrame
         """
-        # temperatureData = pd.DataFrame()
 
         if 'temperatureData.csv' not in os.listdir(self.path):
             temperatureData = self.makeTempdataCSV()
@@ -407,7 +412,6 @@ class DataLoggerTemperatures(Logulator):
         plt.title('Data Logger Temperatures', color='C0')
         plt.ylabel('Temperature', color='C0', size=10)
         plt.grid('on', linestyle='--')
-
         plt.legend(title='Input Sensor')
         plt.get_current_fig_manager().canvas.set_window_title(Logulator.getVersion(self))
         imageName = ('Data Logger ' + str(dfTemp.index[0]) + '.png').replace(' ', '_').replace(':', '')
