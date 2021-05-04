@@ -43,6 +43,13 @@ class Logulator:
                             'Berth 5', 'NOT_USED_1_9', 'Berth 6', 'NOT_USED_1_8', 'Berth 7', 'TEMPERATURE_BERTH_5_2',
                             'Berth 8', 'TEMPERATURE_BERTH_4', 'Berth 9', 'TEMPERATURE_BERTH_3_5',
                             'Berth 10', 'TEMPERATURE_BERTH_2_4')
+        self.seated_temp_vars = ('Vestibule E2', 'Vestibule E1', 'Return Air', 'Guards Room')
+        self.club_temp_vars = ('Vestibule E2', 'Vestibule E1', 'Return Air', 'Crew Room', 'Guards Room')
+        self.acc_temp_vars = ('Vestibule E2', 'Vestibule E1', 'Return Air', 'PRM E1', 'PRM E2',
+                              'Berth 1', 'Berth 2', 'Berth 3', 'Berth 4', 'Berth 5', 'Berth 6')
+        self.sleeper_temp_vars = ('Vestibule E2', 'Vestibule E1', 'Return Air', 'PRM E1', 'PRM E2',
+                                  'Berth 1', 'Berth 2', 'Berth 3', 'Berth 4', 'Berth 5',
+                                  'Berth 6', 'Berth 7', 'Berth 8', 'Berth 9', 'Berth 10')
 
     def getVersion(self):
         """
@@ -415,8 +422,13 @@ class DataLoggerTemperatures(Logulator):
         :return:
         """
         sensor = int(sensor)
-        sensors = {1: 'Dining Floor Return', 2: 'External Grill Supply', 3: 'Vestibule E1',
-                   4: 'Vestibule E2', 5: 'Guards Rest Room', 6: 'Guards Control Room'}
+        sensors = {1: 'Dining Floor Return',
+                   2: 'External Grill Supply',
+                   3: 'Vestibule E1',
+                   4: 'Vestibule E2',
+                   5: 'Guards Rest Room',
+                   6: 'Guards Control Room'
+                   }
         sensorsCAF = {1: '71B01', 2: '71B02', 3: '71B03', 4: '71B04', 5: '71B05', 6: '71B06'}
         sensorToTest = sensors[sensor]
         title = sensorToTest + ' ' + sensorsCAF[sensor]
