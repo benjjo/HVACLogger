@@ -184,7 +184,7 @@ class Logulator:
         while count < var_num:
             df[var_tuple[count]] = allData[var_tuple[count + 1]]
             count += 2
-        print(allData[var_tuple[10::2]])
+        #print(allData[var_tuple[10::2]])
         #df['Average'] = allData[var_tuple[10::2]].mean(axis=1)
         return df
 
