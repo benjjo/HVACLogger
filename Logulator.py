@@ -2,8 +2,6 @@ import pandas as pd
 import os
 import matplotlib.pyplot as plt
 import shutil
-import numpy as np
-from time import sleep
 
 
 class Logulator:
@@ -16,7 +14,7 @@ class Logulator:
         self.all_data = pd.DataFrame()
         self.path = './'
         self.tempDir = self.path + '.temp/'
-        self.version = 'Logulator Lite V4.2'
+        self.version = 'Logulator Lite V5.1a'
         self.coachType = str()
         self.coach_temps_tup = tuple()
         self.coach_avg_temps_list = list()
@@ -82,7 +80,7 @@ class Logulator:
         else:
             print('sǝıʇlnɔıɟɟıd lɐɔınɥɔǝʇ ƃnıʌɐɥ ǝɹɐ ǝʍ')
             input('Something went terribly wrong - ABORT! ABORT! ABORT!')
-        self.coach_avg_temps_list = self.coach_temps_tup[10::2]
+        self.coach_avg_temps_list = list(self.coach_temps_tup[10::2])
 
     def getCoachType(self) -> str:
         return self.coachType
@@ -292,7 +290,7 @@ class Logulator:
 
 
 class TempLogger(Logulator):
-    def plotTemperatures(self):
+    def plotTemperatures(self, average=True):
         """
         Plots all the temperatures.
         :return:
@@ -304,8 +302,9 @@ class TempLogger(Logulator):
             title_suffix = Logulator.getCoachType(self)
 
         dfTemp = temperatureData.copy().set_index('Time date')
-        #dfTemp['Average'] = dfTemp[self.coach_avg_temps_list].mean(axis=1)
         dfTemp.plot(kind='line')
+        if average:
+            dfTemp[self.coach_avg_temps_list].mean(axis=1).plot(kind='line', linestyle=':', label='Average')
         plt.xticks(color='C0', rotation='vertical')
         plt.xlabel('Time date', color='C0', size=10)
         plt.yticks(color='C0')
@@ -484,20 +483,17 @@ def printSensorList():
 
 def main():
     temp = TempLogger()
-
+    average_list = ['n', 'N', 'no', 'No', 'NO', 'f', 'F', 'false', 'False', 'FALSE']
     choice = input("Enter Coach number or just 'ENTER' to continue: ")
-    print('\rStandby while mainframe vulnerabilities are compromised...', end='')
-    sleep(1)
-    print('\rStandby while mainframe vulnerabilities are compromised.. ', end='')
-    sleep(1)
-    print('\rStandby while mainframe vulnerabilities are compromised.  ', end='')
-    sleep(1)
-    print('\rBackdoor hacked                                           ', end='')
-    sleep(0.5)
+    average = input("Display average data? ENTER for Yes, N for No")
+    if average in average_list:
+        average = False
+    else:
+        average = True
     os.system('cls')
 
     Logulator.setCoachNumber(choice)
-    temp.plotTemperatures()
+    temp.plotTemperatures(average)
 
 if __name__ == "__main__":
     main()
