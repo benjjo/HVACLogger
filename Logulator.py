@@ -16,8 +16,10 @@ class Logulator:
         self.all_data = pd.DataFrame()
         self.path = './'
         self.tempDir = self.path + '.temp/'
-        self.version = 'Logulator Lite V4.1a'
+        self.version = 'Logulator Lite V4.2'
         self.coachType = str()
+        self.coach_temps_tup = tuple()
+        self.coach_avg_temps_list = list()
         self.seatVars = ('Time date', 'Time date', 'Type', 'Car type', 'External Supply', 'TEMPERATURE_SUPPLY_1',
                          'SAT1', 'TEMPERATURE_SUPPLY_2', 'SAT2', 'TEMPERATURE_RETURN',
                          'Vestibule E2', 'TEMP. VESTIBULE_LEFT', 'Vestibule E1', 'TEMP. STAFF_WC',
@@ -58,8 +60,29 @@ class Logulator:
         try:
             self.coachType = df['Car type'].mode().iloc[0]
         except IndexError:
-            print('ʍǝ ɐɹǝ ɥɐʌınƃ ʇǝɔɥnıɔɐl dıɟɟıɔnlʇıǝs')
+            print('sǝıʇlnɔıɟɟıd lɐɔınɥɔǝʇ ƃnıʌɐɥ ǝɹɐ ǝʍ')
             input('Your data is probably from 2006 - ABORT! ABORT! ABORT!')
+
+    def set_coach_temps_lists(self):
+        """
+        Setter method to update the tuple of temperature probes that are used and the list used to calculate the
+        average temperature data.
+        Updates:
+        :param coach_type:
+        :return: None
+        """
+        if self.coachType == 'SEATED':
+            self.coach_temps_tup = self.seatVars
+        elif self.coachType == 'CLUB':
+            self.coach_temps_tup = self.clubVars
+        elif self.coachType == 'ACCESSIBLE':
+            self.coach_temps_tup = self.accVars
+        elif self.coachType == 'SLEEPER':
+            self.coach_temps_tup = self.sleeperVars
+        else:
+            print('sǝıʇlnɔıɟɟıd lɐɔınɥɔǝʇ ƃnıʌɐɥ ǝɹɐ ǝʍ')
+            input('Something went terribly wrong - ABORT! ABORT! ABORT!')
+        self.coach_avg_temps_list = self.coach_temps_tup[10::2]
 
     def getCoachType(self) -> str:
         return self.coachType
@@ -168,25 +191,12 @@ class Logulator:
 
     def makeTempdataCSV(self):
         count = 0
-        var_tuple = tuple()
         df = pd.DataFrame()
         allData = self.makeAllDataDF()
-
-        if self.coachType == 'SEATED':
-            var_tuple = self.seatVars
-        elif self.coachType == 'CLUB':
-            var_tuple = self.clubVars
-        elif self.coachType == 'ACCESSIBLE':
-            var_tuple = self.accVars
-        elif self.coachType == 'SLEEPER':
-            var_tuple = self.sleeperVars
-        else:
-            print('ʍǝ ɐɹǝ ɥɐʌınƃ ʇǝɔɥnıɔɐl dıɟɟıɔnlʇıǝs')
-            input('Something went terribly wrong - ABORT! ABORT! ABORT!')
-
-        var_num = len(var_tuple)
+        self.set_coach_temps_lists()
+        var_num = len(self.coach_temps_tup)
         while count < var_num:
-            df[var_tuple[count]] = allData[var_tuple[count + 1]]
+            df[self.coach_temps_tup[count]] = allData[self.coach_temps_tup[count + 1]]
             count += 2
         return df
 
@@ -294,6 +304,7 @@ class TempLogger(Logulator):
             title_suffix = Logulator.getCoachType(self)
 
         dfTemp = temperatureData.copy().set_index('Time date')
+        #dfTemp['Average'] = dfTemp[self.coach_avg_temps_list].mean(axis=1)
         dfTemp.plot(kind='line')
         plt.xticks(color='C0', rotation='vertical')
         plt.xlabel('Time date', color='C0', size=10)
