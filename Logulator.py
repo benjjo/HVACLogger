@@ -15,7 +15,7 @@ class Logulator:
         self.all_data = pd.DataFrame()
         self.path = './'
         self.tempDir = self.path + '.temp/'
-        self.version = 'Logulator Lite V5.1b'
+        self.version = 'Logulator Lite V5.2'
         self.coachType = str()
         self.coach_temps_tup = tuple()
         self.base_temperatures = ['External Supply', 'SAT1', 'SAT2']
@@ -87,16 +87,15 @@ class Logulator:
     def makeAllDataDF(self):
         """
         Constructs a Pandas Data Frame from a directory of MERAK HVAC CSV files.
-        Creates a file all_data.csv from a bunch of HVAC files if it hasn't already
-        been created.
+        Creates a file all_data.csv from a bunch of HVAC files.
         :return: Pandas Data Frame
         """
-        if 'all_data.csv' not in os.listdir(self.path):
-            self.makeTemporaryTXTFilesForCSV('xls')
-            self.writeTempCSVFiles()
-            self.csvToDataFrame()
-            self.writeAllDataCSV()
-            self.all_data.to_csv("all_data.csv", index=False)
+
+        self.makeTemporaryTXTFilesForCSV('xls')
+        self.writeTempCSVFiles()
+        self.csvToDataFrame()
+        self.writeAllDataCSV()
+        self.all_data.to_csv("all_data.csv", index=False)
         allDataDF = pd.read_csv('all_data.csv')
         self.setCoachType(allDataDF)
 
@@ -201,14 +200,12 @@ class Logulator:
     def getTempData(self):
         """
         Returns a DataFrame using the temperature sensor data from the HVAC unit.
-        If there is no temperatureData.csv file available, it will make one with the
-        HVAC csv logs.
+        Makes/overwrites a temperatureData.csv file.
         :return: temperatureData of type DataFrame
         """
 
-        if 'temperatureData.csv' not in os.listdir(self.path):
-            temperatureData = self.makeTempdataCSV()
-            temperatureData.to_csv("temperatureData.csv", index=False)
+        temperatureData = self.makeTempdataCSV()
+        temperatureData.to_csv("temperatureData.csv", index=False)
 
         temperatureData = pd.read_csv("temperatureData.csv")
         temperatureData = self.sortByDateAndReIndex(temperatureData)
@@ -252,7 +249,7 @@ class Logulator:
         """
         Helper method that sets up the Data Frame to be indexed by date.
         :param df:
-        :return:
+        :return pd.DataFrame():
         """
         df['Time date'] = pd.to_datetime(df['Time date'])
         df = df.sort_values(by='Time date')
