@@ -2,6 +2,7 @@ import pandas as pd
 import os
 import matplotlib.pyplot as plt
 import shutil
+import numpy as np
 
 
 class Logulator:
@@ -14,10 +15,10 @@ class Logulator:
         self.all_data = pd.DataFrame()
         self.path = './'
         self.tempDir = self.path + '.temp/'
-        self.version = 'Logulator Lite V5.1a'
+        self.version = 'Logulator Lite V5.1b'
         self.coachType = str()
         self.coach_temps_tup = tuple()
-        self.coach_avg_temps_list = list()
+        self.base_temperatures = ['External Supply', 'SAT1', 'SAT2']
         self.seatVars = ('Time date', 'Time date', 'Type', 'Car type', 'External Supply', 'TEMPERATURE_SUPPLY_1',
                          'SAT1', 'TEMPERATURE_SUPPLY_2', 'SAT2', 'TEMPERATURE_RETURN',
                          'Vestibule E2', 'TEMP. VESTIBULE_LEFT', 'Vestibule E1', 'TEMP. STAFF_WC',
@@ -66,7 +67,6 @@ class Logulator:
         Setter method to update the tuple of temperature probes that are used and the list used to calculate the
         average temperature data.
         Updates:
-        :param coach_type:
         :return: None
         """
         if self.coachType == 'SEATED':
@@ -80,7 +80,6 @@ class Logulator:
         else:
             print('sǝıʇlnɔıɟɟıd lɐɔınɥɔǝʇ ƃnıʌɐɥ ǝɹɐ ǝʍ')
             input('Something went terribly wrong - ABORT! ABORT! ABORT!')
-        self.coach_avg_temps_list = list(self.coach_temps_tup[10::2])
 
     def getCoachType(self) -> str:
         return self.coachType
@@ -196,6 +195,7 @@ class Logulator:
         while count < var_num:
             df[self.coach_temps_tup[count]] = allData[self.coach_temps_tup[count + 1]]
             count += 2
+        df['Average'] = allData[list(self.coach_temps_tup[11::2])].mean(axis=1)
         return df
 
     def getTempData(self):
@@ -290,7 +290,7 @@ class Logulator:
 
 
 class TempLogger(Logulator):
-    def plotTemperatures(self, average=True):
+    def plotTemperatures(self):
         """
         Plots all the temperatures.
         :return:
@@ -302,9 +302,8 @@ class TempLogger(Logulator):
             title_suffix = Logulator.getCoachType(self)
 
         dfTemp = temperatureData.copy().set_index('Time date')
-        dfTemp.plot(kind='line')
-        if average:
-            dfTemp[self.coach_avg_temps_list].mean(axis=1).plot(kind='line', linestyle=':', label='Average')
+        ax = dfTemp[list(self.coach_temps_tup[2::2])].plot(kind='line')
+        dfTemp['Average'].plot(kind='line', linestyle=':', ax=ax)
         plt.xticks(color='C0', rotation='vertical')
         plt.xlabel('Time date', color='C0', size=10)
         plt.yticks(color='C0')
@@ -330,8 +329,9 @@ class TempLogger(Logulator):
                    3: 'Vestibule E1',
                    4: 'Vestibule E2',
                    5: 'Guards Rest Room',
-                   6: 'Guards Control Room'}
-        sensorsCAF = {1: '71B01', 2: '71B02', 3: '71B03', 4: '71B04', 5: '71B05', 6: '71B06'}
+                   6: 'Guards Control Room',
+                   7: 'Average'}
+        sensorsCAF = {1: '71B01', 2: '71B02', 3: '71B03', 4: '71B04', 5: '71B05', 6: '71B06', 7: 'Average'}
         sensorToTest = sensors[sensor]
         title = sensorToTest + ' ' + sensorsCAF[sensor]
         df = pd.DataFrame()
@@ -483,17 +483,11 @@ def printSensorList():
 
 def main():
     temp = TempLogger()
-    average_list = ['n', 'N', 'no', 'No', 'NO', 'f', 'F', 'false', 'False', 'FALSE']
     choice = input("Enter Coach number or just 'ENTER' to continue: ")
-    average = input("Display average data? ENTER for Yes, N for No")
-    if average in average_list:
-        average = False
-    else:
-        average = True
     os.system('cls')
-
     Logulator.setCoachNumber(choice)
-    temp.plotTemperatures(average)
+    temp.plotTemperatures()
+
 
 if __name__ == "__main__":
     main()
