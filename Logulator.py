@@ -9,12 +9,16 @@ class Logulator:
     """
     Class of tools to construct and plot CSV data for MERAK HVAC logs.
     """
+    coach_number = None
+
     def __init__(self):
         self.all_data = pd.DataFrame()
         self.path = './'
         self.tempDir = self.path + '.temp/'
-        self.version = 'Logulator V5.0'
+        self.version = 'Logulator Lite V5.2'
         self.coachType = str()
+        self.coach_temps_tup = tuple()
+        self.base_temperatures = ['External Supply', 'SAT1', 'SAT2']
         self.seatVars = ('Time date', 'Time date', 'Type', 'Car type', 'External Supply', 'TEMPERATURE_SUPPLY_1',
                          'SAT1', 'TEMPERATURE_SUPPLY_2', 'SAT2', 'TEMPERATURE_RETURN',
                          'Vestibule E2', 'TEMP. VESTIBULE_LEFT', 'Vestibule E1', 'TEMP. STAFF_WC',
@@ -55,8 +59,27 @@ class Logulator:
         try:
             self.coachType = df['Car type'].mode().iloc[0]
         except IndexError:
-            print('ʍǝ ɐɹǝ ɥɐʌınƃ ʇǝɔɥnıɔɐl dıɟɟıɔnlʇıǝs')
+            print('sǝıʇlnɔıɟɟıd lɐɔınɥɔǝʇ ƃnıʌɐɥ ǝɹɐ ǝʍ')
             input('Your data is probably from 2006 - ABORT! ABORT! ABORT!')
+
+    def set_coach_temps_lists(self):
+        """
+        Setter method to update the tuple of temperature probes that are used and the list used to calculate the
+        average temperature data.
+        Updates:
+        :return: None
+        """
+        if self.coachType == 'SEATED':
+            self.coach_temps_tup = self.seatVars
+        elif self.coachType == 'CLUB':
+            self.coach_temps_tup = self.clubVars
+        elif self.coachType == 'ACCESSIBLE':
+            self.coach_temps_tup = self.accVars
+        elif self.coachType == 'SLEEPER':
+            self.coach_temps_tup = self.sleeperVars
+        else:
+            print('sǝıʇlnɔıɟɟıd lɐɔınɥɔǝʇ ƃnıʌɐɥ ǝɹɐ ǝʍ')
+            input('Something went terribly wrong - ABORT! ABORT! ABORT!')
 
     def getCoachType(self) -> str:
         return self.coachType
@@ -64,16 +87,15 @@ class Logulator:
     def makeAllDataDF(self):
         """
         Constructs a Pandas Data Frame from a directory of MERAK HVAC CSV files.
-        Creates a file all_data.csv from a bunch of HVAC files if it hasn't already
-        been created.
+        Creates a file all_data.csv from a bunch of HVAC files.
         :return: Pandas Data Frame
         """
-        if 'all_data.csv' not in os.listdir(self.path):
-            self.makeTemporaryTXTFilesForCSV('xls')
-            self.writeTempCSVFiles()
-            self.csvToDataFrame()
-            self.writeAllDataCSV()
-            self.all_data.to_csv("all_data.csv", index=False)
+
+        self.makeTemporaryTXTFilesForCSV('xls')
+        self.writeTempCSVFiles()
+        self.csvToDataFrame()
+        self.writeAllDataCSV()
+        self.all_data.to_csv("all_data.csv", index=False)
         allDataDF = pd.read_csv('all_data.csv')
         self.setCoachType(allDataDF)
 
@@ -165,40 +187,25 @@ class Logulator:
 
     def makeTempdataCSV(self):
         count = 0
-        var_tuple = tuple()
         df = pd.DataFrame()
         allData = self.makeAllDataDF()
-
-        if self.coachType == 'SEATED':
-            var_tuple = self.seatVars
-        elif self.coachType == 'CLUB':
-            var_tuple = self.clubVars
-        elif self.coachType == 'ACCESSIBLE':
-            var_tuple = self.accVars
-        elif self.coachType == 'SLEEPER':
-            var_tuple = self.sleeperVars
-        else:
-            print('ʍǝ ɐɹǝ ɥɐʌınƃ ʇǝɔɥnıɔɐl dıɟɟıɔnlʇıǝs')
-            input('Something went terribly wrong - ABORT! ABORT! ABORT!')
-        var_num = len(var_tuple)
+        self.set_coach_temps_lists()
+        var_num = len(self.coach_temps_tup)
         while count < var_num:
-            df[var_tuple[count]] = allData[var_tuple[count + 1]]
+            df[self.coach_temps_tup[count]] = allData[self.coach_temps_tup[count + 1]]
             count += 2
-        #print(allData[var_tuple[10::2]])
-        #df['Average'] = allData[var_tuple[10::2]].mean(axis=1)
+        df['Average'] = allData[list(self.coach_temps_tup[11::2])].mean(axis=1)
         return df
 
     def getTempData(self):
         """
         Returns a DataFrame using the temperature sensor data from the HVAC unit.
-        If there is no temperatureData.csv file available, it will make one with the
-        HVAC csv logs.
+        Makes/overwrites a temperatureData.csv file.
         :return: temperatureData of type DataFrame
         """
 
-        if 'temperatureData.csv' not in os.listdir(self.path):
-            temperatureData = self.makeTempdataCSV()
-            temperatureData.to_csv("temperatureData.csv", index=False)
+        temperatureData = self.makeTempdataCSV()
+        temperatureData.to_csv("temperatureData.csv", index=False)
 
         temperatureData = pd.read_csv("temperatureData.csv")
         temperatureData = self.sortByDateAndReIndex(temperatureData)
@@ -242,7 +249,7 @@ class Logulator:
         """
         Helper method that sets up the Data Frame to be indexed by date.
         :param df:
-        :return:
+        :return pd.DataFrame():
         """
         df['Time date'] = pd.to_datetime(df['Time date'])
         df = df.sort_values(by='Time date')
@@ -270,6 +277,14 @@ class Logulator:
         tempComparison = temperatureData.combine_first(tempComparison)
         return tempComparison
 
+    @classmethod
+    def getCoachNumber(cls):
+        return Logulator.coach_number
+
+    @classmethod
+    def setCoachNumber(cls, number):
+        Logulator.coach_number = number
+
 
 class TempLogger(Logulator):
     def plotTemperatures(self):
@@ -278,13 +293,19 @@ class TempLogger(Logulator):
         :return:
         """
         temperatureData = Logulator.getTempData(self)
+
+        title_suffix = Logulator.getCoachNumber()
+        if title_suffix == '':
+            title_suffix = Logulator.getCoachType(self)
+
         dfTemp = temperatureData.copy().set_index('Time date')
-        dfTemp.plot(kind='line')
+        ax = dfTemp[list(self.coach_temps_tup[2::2])].plot(kind='line')
+        dfTemp['Average'].plot(kind='line', linestyle=':', ax=ax)
         plt.xticks(color='C0', rotation='vertical')
         plt.xlabel('Time date', color='C0', size=10)
         plt.yticks(color='C0')
         plt.tight_layout(pad=2)
-        plt.title('HVAC Temperatures: ' + Logulator.getCoachType(self), color='C0')
+        plt.title('HVAC Temperatures: ' + title_suffix, color='C0')
         plt.ylabel('Temperature', color='C0', size=10)
         plt.grid('on', linestyle='--')
         plt.legend(title='Sensor')
@@ -305,8 +326,9 @@ class TempLogger(Logulator):
                    3: 'Vestibule E1',
                    4: 'Vestibule E2',
                    5: 'Guards Rest Room',
-                   6: 'Guards Control Room'}
-        sensorsCAF = {1: '71B01', 2: '71B02', 3: '71B03', 4: '71B04', 5: '71B05', 6: '71B06'}
+                   6: 'Guards Control Room',
+                   7: 'Average'}
+        sensorsCAF = {1: '71B01', 2: '71B02', 3: '71B03', 4: '71B04', 5: '71B05', 6: '71B06', 7: 'Average'}
         sensorToTest = sensors[sensor]
         title = sensorToTest + ' ' + sensorsCAF[sensor]
         df = pd.DataFrame()
@@ -400,6 +422,7 @@ class DataLoggerTemperatures(Logulator):
         plt.title('Data Logger Temperatures', color='C0')
         plt.ylabel('Temperature', color='C0', size=10)
         plt.grid('on', linestyle='--')
+
         plt.legend(title='Input Sensor')
         plt.get_current_fig_manager().canvas.set_window_title(Logulator.getVersion(self))
         imageName = ('Data Logger ' + str(dfTemp.index[0]) + '.png').replace(' ', '_').replace(':', '')
@@ -414,13 +437,8 @@ class DataLoggerTemperatures(Logulator):
         :return:
         """
         sensor = int(sensor)
-        sensors = {1: 'Dining Floor Return',
-                   2: 'External Grill Supply',
-                   3: 'Vestibule E1',
-                   4: 'Vestibule E2',
-                   5: 'Guards Rest Room',
-                   6: 'Guards Control Room'
-                   }
+        sensors = {1: 'Dining Floor Return', 2: 'External Grill Supply', 3: 'Vestibule E1',
+                   4: 'Vestibule E2', 5: 'Guards Rest Room', 6: 'Guards Control Room'}
         sensorsCAF = {1: '71B01', 2: '71B02', 3: '71B03', 4: '71B04', 5: '71B05', 6: '71B06'}
         sensorToTest = sensors[sensor]
         title = sensorToTest + ' ' + sensorsCAF[sensor]
@@ -462,37 +480,10 @@ def printSensorList():
 
 def main():
     temp = TempLogger()
-    damp = DampLogger()
-    dataLog = DataLoggerTemperatures()
-
-    print("""
-    Choose operation:
-        1. Plot HVAC temperatures
-        2. Plot Damper data
-        3. Plot DataLogger file
-        4. Plot DataLogger file on top of HVAC sensor
-        5. Plot Dampers against temperatures
-        6. Plot one temperature sensor
-    """)
-    choice = int(input("Enter choice: "))
+    choice = input("Enter Coach number or just 'ENTER' to continue: ")
     os.system('cls')
-
-    if choice == 1:
-        temp.plotTemperatures()
-    elif choice == 2:
-        damp.plotDamperPositions()
-    elif choice == 3:
-        dataLog.plotDataLoggerTemps()
-    elif choice == 4:
-        printSensorList()
-        dataLog.plotDataLoggerOverHVAC(int(input("Sensor: ")))
-    elif choice == 5:
-        damp.plotDamperOverTemps()
-    elif choice == 6:
-        printSensorList()
-        temp.plotTemperaturesOneSensor(int(input("Sensor: ")))
-    else:
-        print("Your choice was invalid.")
+    Logulator.setCoachNumber(choice)
+    temp.plotTemperatures()
 
 
 if __name__ == "__main__":
