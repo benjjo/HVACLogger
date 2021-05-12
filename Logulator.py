@@ -3,6 +3,7 @@ import os
 import matplotlib.pyplot as plt
 import shutil
 import numpy as np
+import re
 
 
 class Logulator:
@@ -310,7 +311,7 @@ class TempLogger(Logulator):
         plt.grid('on', linestyle='--')
         plt.legend(title='Sensor')
         plt.get_current_fig_manager().canvas.set_window_title(Logulator.getVersion(self))
-        imageName = ('HVAC Temperature Sensors ' + str(dfTemp.index[0]) + '.png').replace(' ', '_').replace(':', '')
+        imageName = (title_suffix + '_' + str(dfTemp.index[-1]) + '.png').replace(' ', '_').replace(':', '')
         plt.savefig(imageName, dpi=300, facecolor='w', edgecolor='w',
                     orientation='landscape', format=None, transparent=False, pad_inches=0.1)
         plt.show()
@@ -480,7 +481,12 @@ def printSensorList():
 
 def main():
     temp = TempLogger()
-    choice = input("Enter Coach number or just 'ENTER' to continue: ")
+    path = os.getcwd()
+    try:
+        coach = re.findall("15...", path)[0]
+    except IndexError:
+        coach = 'Caledonian'
+    choice = input("Type the Coach number or just ENTER for [" + coach + "]") or coach
     os.system('cls')
     Logulator.setCoachNumber(choice)
     temp.plotTemperatures()
