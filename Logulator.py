@@ -269,7 +269,7 @@ class Logulator:
         temp_comparison = pd.DataFrame(index=index, columns=columns)
         temp_comparison['Set Point'] = temp_comparison['Set Point'].fillna(set_point)
         temperature_data = df[(df['Time date'] >= logger_data.index[0]) &
-                             (df['Time date'] <= logger_data.index[-1])].copy().set_index('Time date')
+                              (df['Time date'] <= logger_data.index[-1])].copy().set_index('Time date')
         temp_comparison = logger_data.combine_first(temp_comparison)
         temp_comparison = temperature_data.combine_first(temp_comparison)
         return temp_comparison
@@ -335,7 +335,7 @@ class TempLogger(Logulator):
 
         logger_data = self.get_data_logger_data_from_csv()  # Makes a DF using the Data Logger data
         df_temp = df[(df['Time date'] >= logger_data.index[0]) &
-                    (df['Time date'] <= logger_data.index[-1])].copy().set_index('Time date')
+                     (df['Time date'] <= logger_data.index[-1])].copy().set_index('Time date')
         df_temp.plot(kind='line')
         plt.xticks(color='C0', rotation='vertical')
         plt.xlabel('Time date', color='C0', size=10)
