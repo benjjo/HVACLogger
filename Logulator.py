@@ -132,7 +132,7 @@ class Logulator:
             with open(self.temp_dir + file) as fin, open(self.temp_dir + str(counter) + '_final.csv', 'w') as fout:
                 for line in fin:
                     fout.write(line.replace('BERTH_9_FEEDBACK,BERTH_10_FEEDBACK,',
-                                            'BERTH_9_FEEDBACK,BERTH_10_FEEDBACK,NothinToSeeHere,'))
+                                            'BERTH_9_FEEDBACK,BERTH_10_FEEDBACK,NothingToSeeHere,'))
                 counter += 1
 
     def create_datalogger_csv(self):
