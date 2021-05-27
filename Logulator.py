@@ -16,7 +16,7 @@ class Logulator:
         self.all_data = pd.DataFrame()
         self.path = './'
         self.temp_dir = self.path + '.temp/'
-        self.version = 'Logulator V5.3'
+        self.version = 'Logulator V6'
         self.coach_type = str()
         self.coach_temps_tup = tuple()
         self.base_temperatures = ['External Supply', 'SAT1', 'SAT2']
