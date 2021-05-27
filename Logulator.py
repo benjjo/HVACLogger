@@ -16,7 +16,7 @@ class Logulator:
         self.all_data = pd.DataFrame()
         self.path = './'
         self.temp_dir = self.path + '.temp/'
-        self.version = 'Logulator Lite V5.4'
+        self.version = 'Logulator Lite V6'
         self.coach_type = str()
         self.coach_temps_tup = tuple()
         self.base_temperatures = ['External Supply', 'SAT1', 'SAT2']
@@ -197,7 +197,7 @@ class Logulator:
             df[self.coach_temps_tup[count]] = all_data[self.coach_temps_tup[count + 1]]
             count += 2
         df['Average'] = all_data[list(self.coach_temps_tup[11::2])].mean(axis=1)
-        df['Set Point'] = df['Return Air'].apply(lambda x: self.calculate_set_point(x, 22))
+        df['Set Point'] = df['External Supply'].apply(lambda x: self.calculate_set_point(x, 22))
         return df
 
     def get_temperature_data_from_allData(self):
