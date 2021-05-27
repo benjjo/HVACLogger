@@ -182,6 +182,12 @@ class Logulator:
             data = pd.read_csv(self.temp_dir + file)
             self.all_data = self.all_data.append(data)
 
+    def calculate_set_point(self, FAT, SP):
+        if FAT > 15:
+            return SP + (0.25 * (FAT - 15))
+        else:
+            return SP
+
     def df_from_temperature_selection(self):
         count = 0
         df = pd.DataFrame()
@@ -191,6 +197,7 @@ class Logulator:
             df[self.coach_temps_tup[count]] = all_data[self.coach_temps_tup[count + 1]]
             count += 2
         df['Average'] = all_data[list(self.coach_temps_tup[11::2])].mean(axis=1)
+        df['Set Point'] = df['External Supply'].apply(lambda x: self.calculate_set_point(x, 22))
         return df
 
     def get_temperature_data_from_allData(self):
@@ -297,7 +304,8 @@ class TempLogger(Logulator):
 
         df_temp = temperatureData.copy().set_index('Time date')
         ax = df_temp[list(self.coach_temps_tup[2::2])].plot(kind='line')
-        df_temp['Average'].plot(kind='line', linestyle=':', ax=ax)
+        #df_temp['Average'].plot(kind='line', linestyle=':', ax=ax)
+        df_temp['Set Point'].plot(kind='line', linestyle=':', ax=ax)
         plt.xticks(color='C0', rotation='vertical')
         plt.xlabel('Time date', color='C0', size=10)
         plt.yticks(color='C0')
