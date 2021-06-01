@@ -10,16 +10,15 @@ class Logulator:
     """
     Class of tools to construct and plot CSV data for MERAK HVAC logs.
     """
-    coach_number = None
+    _coach_number = None
+    _version = 'Logulator Lite V6.1'
 
     def __init__(self):
         self.all_data = pd.DataFrame()
         self.path = './'
         self.temp_dir = self.path + '.temp/'
-        self.version = 'Logulator Lite V6'
         self.coach_type = str()
         self.coach_temps_tup = tuple()
-        self.base_temperatures = ['External Supply', 'SAT1', 'SAT2']
         self.seated_vars = ('Time date', 'Time date', 'Type', 'Car type', 'External Supply', 'TEMPERATURE_SUPPLY_1',
                             'SAT1', 'TEMPERATURE_SUPPLY_2', 'SAT2', 'TEMPERATURE_RETURN',
                             'Vestibule E2', 'TEMP. VESTIBULE_LEFT', 'Vestibule E1', 'TEMP. STAFF_WC',
@@ -49,41 +48,33 @@ class Logulator:
                              'Berth 8', 'TEMPERATURE_BERTH_4', 'Berth 9', 'TEMPERATURE_BERTH_3_5',
                              'Berth 10', 'TEMPERATURE_BERTH_2_4')
 
-    def get_version(self):
-        """
-        Returns the current revision of Logulator
-        :return:
-        """
-        return self.version
+    def get_coach_type(self) -> str:
+        return self.coach_type
 
     def set_coach_type(self, df: pd.DataFrame):
         try:
-            self.coach_type = df['Car type'].mode().iloc[0]
+            self.coach_type = str(df['Car type'].mode().iloc[0])
         except IndexError:
-            print('sǝıʇlnɔıɟɟıd lɐɔınɥɔǝʇ ƃnıʌɐɥ ǝɹɐ ǝʍ')
-            input('Your data is probably from 2006 - ABORT! ABORT! ABORT!')
+            raise FileNotFoundError('Bad data input. The logs are probably from 2006. ABORTING!')
 
-    def set_coach_temps_lists(self):
+    def write_coach_temps_lists(self):
         """
         Setter method to update the tuple of temperature probes that are used and the list used to calculate the
         average temperature data.
         Updates:
         :return: None
         """
-        if self.coach_type == 'SEATED':
+        if self.get_coach_type() == 'SEATED':
             self.coach_temps_tup = self.seated_vars
-        elif self.coach_type == 'CLUB':
+        elif self.get_coach_type() == 'CLUB':
             self.coach_temps_tup = self.club_vars
-        elif self.coach_type == 'ACCESSIBLE':
+        elif self.get_coach_type() == 'ACCESSIBLE':
             self.coach_temps_tup = self.accessible_vars
-        elif self.coach_type == 'SLEEPER':
+        elif self.get_coach_type() == 'SLEEPER':
             self.coach_temps_tup = self.sleeper_vars
         else:
             print('sǝıʇlnɔıɟɟıd lɐɔınɥɔǝʇ ƃnıʌɐɥ ǝɹɐ ǝʍ')
-            input('Something went terribly wrong - ABORT! ABORT! ABORT!')
-
-    def get_coach_type(self) -> str:
-        return self.coach_type
+            input('Something went terribly wrong - The coach_type var is missing. ')
 
     def make_all_data_df(self):
         """
@@ -99,7 +90,6 @@ class Logulator:
         self.all_data.to_csv("all_data.csv", index=False)
         all_data_df = pd.read_csv('all_data.csv')
         self.set_coach_type(all_data_df)
-
         return all_data_df
 
     def make_temporary_text_files(self, extension):
@@ -182,7 +172,8 @@ class Logulator:
             data = pd.read_csv(self.temp_dir + file)
             self.all_data = self.all_data.append(data)
 
-    def calculate_set_point(self, FAT, SP):
+    @staticmethod
+    def calculate_set_point(FAT, SP):
         if FAT > 15:
             return SP + (0.25 * (FAT - 15))
         else:
@@ -192,7 +183,7 @@ class Logulator:
         count = 0
         df = pd.DataFrame()
         all_data = self.make_all_data_df()
-        self.set_coach_temps_lists()
+        self.write_coach_temps_lists()
         while count < len(self.coach_temps_tup):
             df[self.coach_temps_tup[count]] = all_data[self.coach_temps_tup[count + 1]]
             count += 2
@@ -283,11 +274,11 @@ class Logulator:
 
     @classmethod
     def get_coach_number(cls):
-        return Logulator.coach_number
+        return Logulator._coach_number
 
     @classmethod
     def set_coach_number(cls, number):
-        Logulator.coach_number = number
+        Logulator._coach_number = number
 
 
 class TempLogger(Logulator):
@@ -304,7 +295,7 @@ class TempLogger(Logulator):
 
         df_temp = temperatureData.copy().set_index('Time date')
         ax = df_temp[list(self.coach_temps_tup[2::2])].plot(kind='line')
-        #df_temp['Average'].plot(kind='line', linestyle=':', ax=ax)
+        # df_temp['Average'].plot(kind='line', linestyle=':', ax=ax)
         df_temp['Set Point'].plot(kind='line', linestyle=':', ax=ax)
         plt.xticks(color='C0', rotation='vertical')
         plt.xlabel('Time date', color='C0', size=10)
@@ -314,7 +305,7 @@ class TempLogger(Logulator):
         plt.ylabel('Temperature', color='C0', size=10)
         plt.grid('on', linestyle='--')
         plt.legend(title='Sensor')
-        plt.get_current_fig_manager().canvas.set_window_title(Logulator.get_version(self))
+        plt.get_current_fig_manager().canvas.set_window_title(Logulator._version)
         image_name = (title_suffix + '_' + str(df_temp.index[-1]) + '.png').replace(' ', '_').replace(':', '')
         plt.savefig(image_name, dpi=300, facecolor='w', edgecolor='w',
                     orientation='landscape', format=None, transparent=False, pad_inches=0.1)
@@ -353,7 +344,7 @@ class TempLogger(Logulator):
         plt.ylabel('Temperature', color='C0', size=10)
         plt.grid('on', linestyle='--')
         plt.legend(title='Sensor')
-        plt.get_current_fig_manager().canvas.set_window_title(Logulator.get_version(self))
+        plt.get_current_fig_manager().canvas.set_window_title(Logulator._version)
         image_name = (title + str(df_temp.index[0]) + '.png').replace(' ', '_').replace(':', '')
         plt.savefig(image_name, dpi=300, facecolor='w', edgecolor='w',
                     orientation='landscape', format=None, transparent=False, pad_inches=0.1)
@@ -378,7 +369,7 @@ class DampLogger(Logulator):
         plt.ylabel('% Percentage Open', color='C0', size=10)
         plt.grid('on', linestyle='--')
         plt.legend(title='Damper Position %')
-        plt.get_current_fig_manager().canvas.set_window_title(Logulator.get_version(self))
+        plt.get_current_fig_manager().canvas.set_window_title(Logulator._version)
         imageName = ('Damper Position Data ' + str(df_temp.index[0]) + '.png').replace(' ', '_').replace(':', '')
         plt.savefig(imageName, dpi=300, facecolor='w', edgecolor='w',
                     orientation='landscape', format=None, transparent=False, pad_inches=0.1)
@@ -405,7 +396,7 @@ class DampLogger(Logulator):
         ax1.plot(df_temp, label='Temperature supply')
         ax2.plot(damper, label='Damper')
 
-        plt.get_current_fig_manager().canvas.set_window_title(Logulator.get_version(self))
+        plt.get_current_fig_manager().canvas.set_window_title(Logulator._version)
         plt.title('Damper position & HVAC Temperatures', color='C0')
         plt.grid('on', linestyle='--')
 
@@ -429,7 +420,7 @@ class DataLoggerTemperatures(Logulator):
         plt.grid('on', linestyle='--')
 
         plt.legend(title='Input Sensor')
-        plt.get_current_fig_manager().canvas.set_window_title(Logulator.get_version(self))
+        plt.get_current_fig_manager().canvas.set_window_title(Logulator._version)
         image_name = ('Data Logger ' + str(df_temp.index[0]) + '.png').replace(' ', '_').replace(':', '')
         plt.savefig(image_name, dpi=300, facecolor='w', edgecolor='w',
                     orientation='landscape', format=None, transparent=False, pad_inches=0.1)
@@ -463,7 +454,7 @@ class DataLoggerTemperatures(Logulator):
         plt.ylabel('Temperature', color='C0', size=10)
         plt.grid('on', linestyle='--')
         plt.legend(title='Input Sensor')
-        plt.get_current_fig_manager().canvas.set_window_title(Logulator.get_version(self))
+        plt.get_current_fig_manager().canvas.set_window_title(Logulator._version)
         image_name = (title + ' ' + str(df_temps.index[0]) + '.png').replace(' ', '_').replace(':', '')
         plt.savefig(image_name, dpi=300, facecolor='w', edgecolor='w',
                     orientation='landscape', format=None, transparent=False, pad_inches=0.1)
