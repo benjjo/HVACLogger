@@ -1,5 +1,3 @@
-import sys
-
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
@@ -18,7 +16,7 @@ class Logulator:
     def __init__(self):
         self.all_data = pd.DataFrame()
         self.path = './'
-        self.temp_dir = self.path + '.temp/'
+        self.temp_dir = '{}.temp/'.format(self.path)
         self.coach_type = str()
         self.coach_temps_tup = tuple()
         self.seated_vars = ('Time date', 'Time date', 'Type', 'Car type', 'External Supply', 'TEMPERATURE_SUPPLY_1',
@@ -82,7 +80,6 @@ class Logulator:
         Creates a file all_data.csv from a bunch of HVAC files.
         :return: Pandas Data Frame
         """
-
         self.make_temporary_text_files('xls')
         self.write_temporary_csv_files()
         self.read_csv_to_allData_df()
@@ -104,7 +101,7 @@ class Logulator:
         os.makedirs(self.temp_dir, exist_ok=True)
         counter = 0
         for file in [f for f in files if f[-3:] == extension]:
-            with open(file) as fin, open(self.temp_dir + str(counter) + '_New_File.txt', 'w') as fout:
+            with open(file) as fin, open('{}{}_New_File.txt'.format(self.temp_dir, str(counter)), 'w') as fout:
                 for line in fin.readlines()[1:]:  # don't look at the first line
                     fout.write(line.replace('\t', ','))
                 counter += 1
@@ -119,7 +116,8 @@ class Logulator:
         temp_files = os.listdir(self.temp_dir)
         counter = 0
         for file in [f for f in temp_files if f[-3:] == 'txt']:
-            with open(self.temp_dir + file) as fin, open(self.temp_dir + str(counter) + '_final.csv', 'w') as fout:
+            with open(self.temp_dir + file) as fin, \
+                    open('{}{}_final.csv'.format(self.temp_dir, str(counter)), 'w') as fout:
                 for line in fin:
                     fout.write(line.replace('BERTH_9_FEEDBACK,BERTH_10_FEEDBACK,',
                                             'BERTH_9_FEEDBACK,BERTH_10_FEEDBACK,NothingToSeeHere,'))
@@ -138,8 +136,8 @@ class Logulator:
         os.makedirs(tempDir, exist_ok=True)
         counter = 0
         for file in [f for f in files if f[-4:] == 'xlsx']:
-            shutil.copy(file, tempDir + str(counter) + '_New_File.xlsx')
-            data = pd.read_excel(tempDir + str(counter) + '_New_File.xlsx', engine='openpyxl')
+            shutil.copy(file, '{}{}_New_File.xlsx'.format(tempDir, str(counter)))
+            data = pd.read_excel('{}{}_New_File.xlsx'.format(tempDir, str(counter)), engine='openpyxl')
             temp_logs = temp_logs.append(data)
             counter += 1
         logger_df['Time date'] = temp_logs['Time']
@@ -173,11 +171,8 @@ class Logulator:
             self.all_data = self.all_data.append(data)
 
     @staticmethod
-    def calculate_set_point(FAT, SP):
-        if FAT > 15:
-            return SP + (0.25 * (FAT - 15))
-        else:
-            return SP
+    def calculate_set_point(FAT, SP=22):
+        return (SP + (0.25 * (FAT - 15))) if FAT > 15 else SP
 
     def df_from_temperature_selection(self):
         count = 0
@@ -295,18 +290,17 @@ class TempLogger(Logulator):
 
         df_temp = temperatureData.copy().set_index('Time date')
         ax = df_temp[list(self.coach_temps_tup[2::2])].plot(kind='line')
-        # df_temp['Average'].plot(kind='line', linestyle=':', ax=ax)
         df_temp['Set Point'].plot(kind='line', linestyle=':', ax=ax)
         plt.xticks(color='C0', rotation='vertical')
         plt.xlabel('Time date', color='C0', size=10)
         plt.yticks(color='C0')
         plt.tight_layout(pad=2)
-        plt.title('HVAC Temperatures: ' + title_suffix, color='C0')
+        plt.title('HVAC Temperatures: {}'.format(title_suffix), color='C0')
         plt.ylabel('Temperature', color='C0', size=10)
         plt.grid('on', linestyle='--')
         plt.legend(title='Sensor')
         plt.get_current_fig_manager().canvas.set_window_title(Logulator._version)
-        image_name = (title_suffix + '_' + str(df_temp.index[-1]) + '.png').replace(' ', '_').replace(':', '')
+        image_name = ('{}_{}.png'.format(title_suffix, str(df_temp.index[-1]))).replace(' ', '_').replace(':', '')
         plt.savefig(image_name, dpi=300, facecolor='w', edgecolor='w',
                     orientation='landscape', format=None, transparent=False, pad_inches=0.1)
         plt.show()
@@ -326,7 +320,7 @@ class TempLogger(Logulator):
                    7: 'Average'}
         sensors_caf = {1: '71B01', 2: '71B02', 3: '71B03', 4: '71B04', 5: '71B05', 6: '71B06', 7: 'Average'}
         sensor_to_test = sensors[sensor]
-        title = sensor_to_test + ' ' + sensors_caf[sensor]
+        title = '{}_{}'.format(sensor_to_test, sensors_caf[sensor])
         df = pd.DataFrame()
         df['Time date'] = Logulator.get_temperature_data_from_allData(self)['Time date']
         df[sensors[sensor]] = Logulator.get_temperature_data_from_allData(self)[sensors[sensor]]
@@ -340,12 +334,12 @@ class TempLogger(Logulator):
         plt.xlabel('Time date', color='C0', size=10)
         plt.yticks(color='C0')
         plt.tight_layout(pad=2)
-        plt.title(title + ' to data logger', color='C0')
+        plt.title('{} to data logger'.format(title), color='C0')
         plt.ylabel('Temperature', color='C0', size=10)
         plt.grid('on', linestyle='--')
         plt.legend(title='Sensor')
         plt.get_current_fig_manager().canvas.set_window_title(Logulator._version)
-        image_name = (title + str(df_temp.index[0]) + '.png').replace(' ', '_').replace(':', '')
+        image_name = ('{}{}.png'.format(title, str(df_temp.index[0]))).replace(' ', '_').replace(':', '')
         plt.savefig(image_name, dpi=300, facecolor='w', edgecolor='w',
                     orientation='landscape', format=None, transparent=False, pad_inches=0.1)
         plt.show()
@@ -370,7 +364,7 @@ class DampLogger(Logulator):
         plt.grid('on', linestyle='--')
         plt.legend(title='Damper Position %')
         plt.get_current_fig_manager().canvas.set_window_title(Logulator._version)
-        imageName = ('Damper Position Data ' + str(df_temp.index[0]) + '.png').replace(' ', '_').replace(':', '')
+        imageName = ('Damper Position Data{}.png'.format(str(df_temp.index[0]))).replace(' ', '_').replace(':', '')
         plt.savefig(imageName, dpi=300, facecolor='w', edgecolor='w',
                     orientation='landscape', format=None, transparent=False, pad_inches=0.1)
         plt.show()
@@ -421,7 +415,7 @@ class DataLoggerTemperatures(Logulator):
 
         plt.legend(title='Input Sensor')
         plt.get_current_fig_manager().canvas.set_window_title(Logulator._version)
-        image_name = ('Data Logger ' + str(df_temp.index[0]) + '.png').replace(' ', '_').replace(':', '')
+        image_name = ('DataLogger{}.png'.format(str(df_temp.index[0]))).replace(' ', '_').replace(':', '')
         plt.savefig(image_name, dpi=300, facecolor='w', edgecolor='w',
                     orientation='landscape', format=None, transparent=False, pad_inches=0.1)
         plt.show()
@@ -437,7 +431,7 @@ class DataLoggerTemperatures(Logulator):
                    4: 'Vestibule E2', 5: 'Guards Rest Room', 6: 'Guards Control Room'}
         sensors_CAF = {1: '71B01', 2: '71B02', 3: '71B03', 4: '71B04', 5: '71B05', 6: '71B06'}
         sensor_to_test = sensors[sensor]
-        title = sensor_to_test + ' ' + sensors_CAF[sensor]
+        title = '{} {}'.format(sensor_to_test, sensors_CAF[sensor])
 
         df_temps = pd.DataFrame()
         temp_comparison = Logulator.spread_index_over_second_increments(self)
@@ -455,7 +449,7 @@ class DataLoggerTemperatures(Logulator):
         plt.grid('on', linestyle='--')
         plt.legend(title='Input Sensor')
         plt.get_current_fig_manager().canvas.set_window_title(Logulator._version)
-        image_name = (title + ' ' + str(df_temps.index[0]) + '.png').replace(' ', '_').replace(':', '')
+        image_name = ('{}{}.png'.format(title, str(df_temps.index[0]))).replace(' ', '_').replace(':', '')
         plt.savefig(image_name, dpi=300, facecolor='w', edgecolor='w',
                     orientation='landscape', format=None, transparent=False, pad_inches=0.1)
         plt.show()
@@ -480,7 +474,7 @@ def main():
         coach = re.findall("15...", path)[0]
     except IndexError:
         coach = 'Caledonian'
-    choice = input("Type the Coach number or just ENTER for [" + coach + "]") or coach
+    choice = input("Type the Coach number or just ENTER for [{}]".format(coach)) or coach
     os.system('cls')
     Logulator.set_coach_number(choice)
     temp.plot_coach_temperatures()
