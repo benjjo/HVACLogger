@@ -57,7 +57,7 @@ class Logulator:
         except IndexError:
             raise FileNotFoundError('Bad data input. The logs are probably from 2006. ABORTING!')
 
-    def set_coach_temps(self, choice):
+    def get_coach_temps_tup(self, choice):
         return {
             'SEATED': self.seated_vars,
             'CLUB': self.club_vars,
@@ -65,14 +65,14 @@ class Logulator:
             'SLEEPER': self.sleeper_vars,
         }[choice]
 
-    def write_coach_temps_lists(self):
+    def set_coach_temps_lists(self):
         """
         Setter method to update the tuple of temperature probes that are used and the list used to calculate the
         average temperature data.
         Updates:
         :return: None
         """
-        self.coach_temps_tup = self.set_coach_temps(self.get_coach_type())
+        self.coach_temps_tup = self.get_coach_temps_tup(self.get_coach_type())
 
     def make_all_data_df(self):
         """
@@ -178,7 +178,7 @@ class Logulator:
         count = 0
         df = pd.DataFrame()
         all_data = self.make_all_data_df()
-        self.write_coach_temps_lists()
+        self.set_coach_temps_lists()
         while count < len(self.coach_temps_tup):
             df[self.coach_temps_tup[count]] = all_data[self.coach_temps_tup[count + 1]]
             count += 2
