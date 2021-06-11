@@ -1,3 +1,5 @@
+import sys
+
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
@@ -57,6 +59,14 @@ class Logulator:
         except IndexError:
             raise FileNotFoundError('Bad data input. The logs are probably from 2006. ABORTING!')
 
+    def set_coach_temps(self, choice):
+        return {
+            'SEATED': self.seated_vars,
+            'CLUB': self.club_vars,
+            'ACCESSIBLE': self.accessible_vars,
+            'SLEEPER': self.sleeper_vars,
+        }[choice]
+
     def write_coach_temps_lists(self):
         """
         Setter method to update the tuple of temperature probes that are used and the list used to calculate the
@@ -64,17 +74,7 @@ class Logulator:
         Updates:
         :return: None
         """
-        if self.get_coach_type() == 'SEATED':
-            self.coach_temps_tup = self.seated_vars
-        elif self.get_coach_type() == 'CLUB':
-            self.coach_temps_tup = self.club_vars
-        elif self.get_coach_type() == 'ACCESSIBLE':
-            self.coach_temps_tup = self.accessible_vars
-        elif self.get_coach_type() == 'SLEEPER':
-            self.coach_temps_tup = self.sleeper_vars
-        else:
-            print('sǝıʇlnɔıɟɟıd lɐɔınɥɔǝʇ ƃnıʌɐɥ ǝɹɐ ǝʍ')
-            input('Something went terribly wrong - The coach_type var is missing. ')
+        self.coach_temps_tup = self.set_coach_temps(self.get_coach_type())
 
     def make_all_data_df(self):
         """
