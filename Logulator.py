@@ -6,15 +6,16 @@ import numpy as np
 import re
 
 
-class Logulator:
+class Logulator(object):
     """
     Class of tools to construct and plot CSV data for MERAK HVAC logs.
     """
     coach_number = None
+    corner = None
 
     def __init__(self):
         self.all_data = pd.DataFrame()
-        self.path = './'
+        self.path = '../../Documents/logs/trainLogs/15106/HVAC/Ducting/20210727/2B/'
         self.temp_dir = self.path + '.temp/'
         self.version = 'Logulator V6'
         self.coach_type = str()
@@ -182,7 +183,8 @@ class Logulator:
             data = pd.read_csv(self.temp_dir + file)
             self.all_data = self.all_data.append(data)
 
-    def calculate_set_point(self, FAT, SP):
+    @staticmethod
+    def calculate_set_point(FAT, SP):
         if FAT > 15:
             return SP + (0.25 * (FAT - 15))
         else:
@@ -260,7 +262,7 @@ class Logulator:
         df = df.reset_index(drop=True)  # Reset the index to line up with the sorted data.
         return df
 
-    def spread_index_over_second_increments(self, set_point=22):
+    def spread_index_over_second_increments(self, set_point=22) -> pd.DataFrame():
         """
         Makes an empty DataFrame with a index using date time incrementing by seconds.
         The date range of the index is set by the info from the data logger as this data
@@ -283,11 +285,11 @@ class Logulator:
 
     @classmethod
     def get_coach_number(cls):
-        return Logulator.coach_number
+        return cls.coach_number
 
     @classmethod
     def set_coach_number(cls, number):
-        Logulator.coach_number = number
+        cls.coach_number = number
 
 
 class TempLogger(Logulator):
@@ -304,7 +306,6 @@ class TempLogger(Logulator):
 
         df_temp = temperatureData.copy().set_index('Time date')
         ax = df_temp[list(self.coach_temps_tup[2::2])].plot(kind='line')
-        #df_temp['Average'].plot(kind='line', linestyle=':', ax=ax)
         df_temp['Set Point'].plot(kind='line', linestyle=':', ax=ax)
         plt.xticks(color='C0', rotation='vertical')
         plt.xlabel('Time date', color='C0', size=10)
@@ -435,25 +436,28 @@ class DataLoggerTemperatures(Logulator):
                     orientation='landscape', format=None, transparent=False, pad_inches=0.1)
         plt.show()
 
-    def plot_data_logger_against_HVAC(self, sensor=0):
+    def plot_data_logger_against_HVAC(self, sensor=1):
         """
         Plots the data logger file over the top of the MERAK data for the same time period.
         :param sensor:
         :return:
         """
         sensor = int(sensor)
-        sensors = {1: 'Dining Floor Return', 2: 'External Grill Supply', 3: 'Vestibule E1',
-                   4: 'Vestibule E2', 5: 'Guards Rest Room', 6: 'Guards Control Room'}
-        sensors_CAF = {1: '71B01', 2: '71B02', 3: '71B03', 4: '71B04', 5: '71B05', 6: '71B06'}
+        sensors = {1: 'Return Air', 2: 'External Supply', 3: 'Vestibule E1',
+                   4: 'Vestibule E2', 5: 'Crew Room', 6: 'Guards Room',
+                   7: 'SAT1', 8: 'SAT2'}
         sensor_to_test = sensors[sensor]
-        title = sensor_to_test + ' ' + sensors_CAF[sensor]
+        title = 'Data Logger Comparison: ' + Logulator.corner
 
         df_temps = pd.DataFrame()
         temp_comparison = Logulator.spread_index_over_second_increments(self)
 
-        df_temps['Logger Temps. °C'] = temp_comparison['Logger Temp. °C'].ffill()
-        df_temps['HVAC Temps. °C'] = temp_comparison[sensor_to_test].ffill()
-        df_temps['Set Point'] = temp_comparison['Set Point']
+        df_temps['Data Logger °C'] = temp_comparison['Logger Temp. °C'].ffill()
+        df_temps[sensor_to_test + ' °C'] = temp_comparison[sensor_to_test].ffill()
+        if sensor_to_test == 'SAT1':
+            df_temps['SAT2 °C'] = temp_comparison['SAT2'].ffill()
+            df_temps['Supply °C'] = temp_comparison['External Supply'].ffill()
+            df_temps['Return °C'] = temp_comparison['Return Air'].ffill()
         df_temps.plot(kind='line', legend=None)
         plt.xticks(color='C0', rotation='vertical')
         plt.xlabel('Time date', color='C0', size=10)
@@ -479,6 +483,7 @@ def print_sensor_choices():
         4. 71B04    E2 Vestibule
         5. 71B05    Crew room
         6. 71B06    Guard's room
+        7. SAT1 & 2
         """)
 
 
@@ -514,6 +519,8 @@ def main():
     elif choice == 3:
         dataLog.plot_data_logger_temperatures()
     elif choice == 4:
+        # Logulator.corner = input('Corner 1A, 1B, 2A, 2B:  ') or 'SAT1/2'
+        # os.system('cls')
         print_sensor_choices()
         dataLog.plot_data_logger_against_HVAC(int(input("Sensor: ")))
     elif choice == 5:
