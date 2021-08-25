@@ -1,9 +1,11 @@
-import pandas as pd
 import os
-import matplotlib.pyplot as plt
-import shutil
-import numpy as np
 import re
+import shutil
+import swifter
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 
 
 class Logulator:
@@ -183,7 +185,7 @@ class Logulator:
             df[self.coach_temps_tup[count]] = all_data[self.coach_temps_tup[count + 1]]
             count += 2
         df['Average'] = all_data[list(self.coach_temps_tup[11::2])].mean(axis=1)
-        df['Set Point'] = df['External Supply'].apply(lambda x: self.calculate_set_point(x, 22))
+        df['Set Point'] = df['External Supply'].swifter.apply(lambda x: self.calculate_set_point(x, 22))
         return df
 
     def get_temperature_data_from_allData(self):
